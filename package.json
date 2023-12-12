@@ -1,0 +1,36 @@
+{
+  "name": "test-reporting-action",
+  "description": "GitHub Action for reporting test data",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prebuild": "rimraf dist/",
+    "build": "ncc build src/index.js -m -o dist/",
+    "lint": "npm run lint:eslint",
+    "lint:eslint": "eslint . --ext .js",
+    "fix": "npm run fix:eslint",
+    "fix:eslint": "npm run lint:eslint -- --fix",
+    "test": "npm run lint && npm run test:unit",
+    "test:unit": "c8 env-cmd -f test/.env mocha \"test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@actions/core": "^1",
+    "@actions/github": "^6",
+    "@aws-sdk/client-sts": "^3",
+    "@aws-sdk/client-timestream-write": "^3",
+    "ajv": "^8",
+    "lodash-es": "^4",
+    "yn": "^5"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38",
+    "c8": "^8",
+    "chai": "^4",
+    "env-cmd": "^10",
+    "eslint": "^8",
+    "eslint-config-brightspace": "^0.25",
+    "mocha": "^10",
+    "rimraf": "^5",
+    "sinon": "^17"
+  }
+}

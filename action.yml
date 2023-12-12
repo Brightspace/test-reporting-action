@@ -1,0 +1,25 @@
+name: Test Reporting
+description: Report testing data from directly in your GitHub Action runs
+inputs:
+  aws-access-key-id:
+    description: >-
+      AWS Access Key ID. This input is required if running in the GitHub hosted environment.
+      It is optional if running in a self-hosted environment that already has AWS credentials,
+      for example on an EC2 instance.
+    required: true
+  aws-secret-access-key:
+    description: >-
+      AWS Secret Access Key. This input is required if running in the GitHub hosted environment.
+      It is optional if running in a self-hosted environment that already has AWS credentials,
+      for example on an EC2 instance.
+    required: true
+  aws-session-token:
+    description: AWS Session Token
+    required: true
+  report-path:
+    description: Path to report JSON file
+    required: true
+    default: ./d2l-test-report.json
+runs:
+  using: node20
+  main: dist/index.js

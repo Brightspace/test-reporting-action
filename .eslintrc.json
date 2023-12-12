@@ -1,0 +1,10 @@
+{
+  "root": true,
+  "extends": [
+    "brightspace/node-config"
+  ],
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2020
+  }
+}
