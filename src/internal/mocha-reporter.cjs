@@ -1,13 +1,13 @@
 const { relative, sep: platformSeparator, resolve } = require('path');
+const chalk = require('chalk');
 const { join } = require('path/posix');
 const { reporters: { Spec } } = require('mocha');
 const { Runner: { constants } } = require('mocha');
 const { type } = require('os');
 const { v4: uuid } = require('uuid');
 const { writeFileSync } = require('fs');
-const chalk  = require('chalk');
 
-const {red, blue} = chalk;
+const { red, blue } = chalk;
 
 const {
 	EVENT_RUN_BEGIN,
