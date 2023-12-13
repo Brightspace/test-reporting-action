@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 
 const ajv = new Ajv({ verbose: true });
 
-addFormats(ajv, ['uuid', 'uri']);
+addFormats(ajv, ['date-time', 'uri', 'uuid' ]);
 
 const schema = {
 	type: 'object',
@@ -25,13 +25,13 @@ const schema = {
 				lmsInstance: { type: 'string', format: 'uri' },
 				operatingSystem: { type: 'string', enum: ['windows', 'linux', 'mac'] },
 				framework: { type: 'string', pattern: '^[^\\s].+[^\\s]$' },
-				started: { type: 'integer', minimum: 0 },
+				started: { type: 'string', format: 'date-time' },
 				totalDuration: { type: 'integer', minimum: 0 },
 				status: { type: 'string', enum: ['passed', 'failed'] },
 				countPassed: { type: 'integer', minimum: 0 },
 				countFailed: { type: 'integer', minimum: 0 },
 				countSkipped: { type: 'integer', minimum: 0 },
-				countFlaky: { type: 'integer', minimum: 0 },
+				countFlaky: { type: 'integer', minimum: 0 }
 			},
 			required: [
 				'githubOrganization',
@@ -60,7 +60,7 @@ const schema = {
 				properties: {
 					name: { type: 'string', pattern: '^[^\\s].+[^\\s]$' },
 					location: { type: 'string', pattern: '^[^\\s].+[^\\s]$' },
-					started: { type: 'integer', minimum: 0 },
+					started: { type: 'string', format: 'date-time' },
 					duration: { type: 'integer', minimum: 0 },
 					totalDuration: { type: 'integer', minimum: 0 },
 					status: { type: 'string', enum: ['passed', 'failed', 'skipped'] },

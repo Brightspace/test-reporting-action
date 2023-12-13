@@ -19,7 +19,7 @@ const reportPartial = {
 	summary: {
 		operatingSystem: 'linux',
 		framework: 'mocha',
-		started: 1702481047904,
+		started: (new Date()).toISOString(),
 		totalDuration: 23857,
 		status: 'passed',
 		countPassed: 2,
@@ -31,7 +31,7 @@ const reportPartial = {
 		{
 			name: 'test suite > flaky test',
 			location: 'test/test-suite.js',
-			started: 1702481047923,
+			started: (new Date()).toISOString(),
 			duration: 237,
 			totalDuration: 549,
 			status: 'passed',
@@ -40,7 +40,7 @@ const reportPartial = {
 		{
 			name: 'test suite > passing test',
 			location: 'test/test-suite.js',
-			started: 1702481047945,
+			started: (new Date()).toISOString(),
 			duration: 237,
 			totalDuration: 237,
 			status: 'passed',
@@ -49,7 +49,7 @@ const reportPartial = {
 		{
 			name: 'test suite > skipped test',
 			location: 'test/test-suite.js',
-			started: 1702481047956,
+			started: (new Date()).toISOString(),
 			duration: 0,
 			totalDuration: 0,
 			status: 'skipped',
@@ -65,7 +65,7 @@ const reportFull = {
 		lmsInstance: 'https://cd2024112345.devlms.desire2learn.com/',
 		operatingSystem: 'linux',
 		framework: 'mocha',
-		started: 1702481047904,
+		started: (new Date()).toISOString(),
 		totalDuration: 23857,
 		status: 'passed',
 		countPassed: 2,
@@ -77,7 +77,7 @@ const reportFull = {
 		{
 			name: 'test suite > flaky test',
 			location: 'test/test-suite.js',
-			started: 1702481047923,
+			started: (new Date()).toISOString(),
 			duration: 237,
 			totalDuration: 549,
 			status: 'passed',
@@ -86,7 +86,7 @@ const reportFull = {
 		{
 			name: 'test suite > passing test',
 			location: 'test/test-suite.js',
-			started: 1702481047945,
+			started: (new Date()).toISOString(),
 			duration: 237,
 			totalDuration: 237,
 			status: 'passed',
@@ -95,7 +95,7 @@ const reportFull = {
 		{
 			name: 'test suite > skipped test',
 			location: 'test/test-suite.js',
-			started: 1702481047956,
+			started: (new Date()).toISOString(),
 			duration: 0,
 			totalDuration: 0,
 			status: 'skipped',
