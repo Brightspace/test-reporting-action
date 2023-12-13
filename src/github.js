@@ -1,10 +1,8 @@
 import { info, error, startGroup, endGroup } from '@actions/core';
-import fs from 'fs';
+import fs from 'fs/promises';
 import { context as gitHubContext } from '@actions/github';
 import { getInput, setFailed } from '@actions/core';
 import { resolve } from 'path';
-
-const { accessSync } = fs;
 
 const makeLogger = () => ({ startGroup, endGroup, info, error });
 
@@ -74,7 +72,7 @@ const getStringInput = (name) => {
 	return input;
 };
 
-const getInputs = (logger) => {
+const getInputs = async(logger) => {
 	logger.startGroup('Gather GitHub inputs');
 
 	const awsAccessKeyId = getStringInput('aws-access-key-id');
@@ -86,8 +84,8 @@ const getInputs = (logger) => {
 	const reportPath = resolve(getStringInput('report-path'));
 
 	try {
-		accessSync(reportPath);
-	} catch {
+		await fs.access(reportPath);
+	} catch (err) {
 		throw new Error('Report path must exists');
 	}
 
@@ -102,4 +100,4 @@ const getInputs = (logger) => {
 	};
 };
 
-export { getContext, getInputs, makeLogger, setFailed };
+export { getContext as getContext, getInputs, makeLogger, setFailed };

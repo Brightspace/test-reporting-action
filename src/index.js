@@ -5,7 +5,7 @@ import { getContext, getInputs, makeLogger, setFailed } from './github.js';
 
 	try {
 		getContext(logger);
-		getInputs(logger);
+		await getInputs(logger);
 	} catch (err) {
 		logger.endGroup();
 
