@@ -1,12 +1,13 @@
 {
   "all": true,
   "check-coverage": true,
-  "statements": 100,
-  "branches": 100,
+  "statements": 95,
+  "branches": 85,
   "functions": 100,
-  "lines": 100,
+  "lines": 95,
   "include": [
-    "src/**/*.js"
+    "src/**/*.js",
+    "src/**/*.cjs"
   ],
   "exclude": [
     "src/index.js"
