@@ -1,10 +1,13 @@
-const { relative, sep: platformSeparator } = require('path');
+const { relative, sep: platformSeparator, resolve } = require('path');
 const { join } = require('path/posix');
 const { reporters: { Spec } } = require('mocha');
 const { Runner: { constants } } = require('mocha');
 const { type } = require('os');
 const { v4: uuid } = require('uuid');
 const { writeFileSync } = require('fs');
+const chalk  = require('chalk');
+
+const {red, blue} = chalk;
 
 const {
 	EVENT_RUN_BEGIN,
@@ -88,10 +91,13 @@ class TestReportingMochaReporter extends Spec {
 
 		try {
 			const reportOutput = JSON.stringify(this._report);
+			const filePath = './d2l-test-report.json';
 
-			writeFileSync('./d2l-test-report.json', reportOutput, 'utf8');
+			writeFileSync(filePath, reportOutput, 'utf8');
+
+			console.info(`  D2L test report available at: ${blue(resolve(filePath))}\n`);
 		} catch {
-			console.log('Failed to write out D2L test report');
+			console.error(red('  Failed to generate D2L test report\n'));
 		}
 	}
 
