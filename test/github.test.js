@@ -1,7 +1,8 @@
 import { getContext, getInputs, makeLogger } from '../src/github.js';
 import { expect } from 'chai';
+import fs from 'fs/promises';
 import { resolve } from 'path';
-import { stub } from 'sinon';
+import { createSandbox } from 'sinon';
 
 const captureOutput = () => {
 	let output = '';
@@ -17,14 +18,20 @@ const captureOutput = () => {
 	};
 };
 
-const makeDummyLogger = () => ({
-	startGroup: stub(),
-	endGroup: stub(),
-	info: stub(),
-	error: stub()
-});
-
 describe('github', () => {
+	let sandbox;
+
+	before(() => sandbox = createSandbox());
+
+	afterEach(() => sandbox.restore());
+
+	const makeDummyLogger = () => ({
+		startGroup: sandbox.stub(),
+		endGroup: sandbox.stub(),
+		info: sandbox.stub(),
+		error: sandbox.stub()
+	});
+
 	it('logger logs', () => {
 		const output = captureOutput();
 		const logger = makeLogger();
@@ -50,66 +57,64 @@ describe('github', () => {
 	});
 
 	describe('get context', () => {
-		describe('succeeds', () => {
-			const expectedResult = {
-				githubOrganization: 'Test',
-				githubRepository: 'test',
-				githubWorkflow: 'test.yml',
-				githubRunId: 12345,
-				githubRunAttempt: 1,
-				gitBranch: 'test/test',
-				gitSha: '0000000000000000000000000000000000000000'
-			};
-			const expectedInfoLines = [
-				'GitHub Organization: Test',
-				'GitHub Repository: test',
-				'GitHub Workflow: test.yml',
-				'GitHub RunId: 12345',
-				'GitHub Run Attempt: 1',
-				'Git Branch: test/test',
-				'Git SHA: 0000000000000000000000000000000000000000'
-			];
-			let logger;
+		const expectedResult = {
+			githubOrganization: 'TestOrganization',
+			githubRepository: 'test-repository',
+			githubWorkflow: 'test-workflow.yml',
+			githubRunId: 12345,
+			githubRunAttempt: 1,
+			gitBranch: 'test/branch',
+			gitSha: '0000000000000000000000000000000000000000'
+		};
+		const expectedInfoLines = [
+			'GitHub Organization: TestOrganization',
+			'GitHub Repository: test-repository',
+			'GitHub Workflow: test-workflow.yml',
+			'GitHub RunId: 12345',
+			'GitHub Run Attempt: 1',
+			'Git Branch: test/branch',
+			'Git SHA: 0000000000000000000000000000000000000000'
+		];
+		let logger;
 
-			beforeEach(() => {
-				logger = makeDummyLogger();
-			});
+		beforeEach(() => {
+			logger = makeDummyLogger();
+		});
 
-			it('pull request', () => {
-				const context = getContext(logger);
+		it('pull request', () => {
+			const context = getContext(logger);
 
-				expect(expectedResult).to.deep.eq(context);
-				expect(logger.startGroup.calledOnce).to.be.true;
-				expect(logger.endGroup.calledOnce).to.be.true;
-				expect(logger.info.callCount).to.eq(7);
-				expect(logger.error.notCalled).to.be.true;
-				expect(logger.startGroup.calledWith('Gather GitHub context')).to.be.true;
+			expect(expectedResult).to.deep.eq(context);
+			expect(logger.startGroup.calledOnce).to.be.true;
+			expect(logger.endGroup.calledOnce).to.be.true;
+			expect(logger.info.callCount).to.eq(7);
+			expect(logger.error.notCalled).to.be.true;
+			expect(logger.startGroup.calledWith('Gather GitHub context')).to.be.true;
 
-				for (const i in expectedInfoLines) {
-					expect(logger.info.calledWith(expectedInfoLines[i])).to.be.true;
-				}
-			});
+			for (const i in expectedInfoLines) {
+				expect(logger.info.calledWith(expectedInfoLines[i])).to.be.true;
+			}
+		});
 
-			it('branch', () => {
-				const githubHeadRef = process.env['GITHUB_HEAD_REF'];
+		it('branch', () => {
+			const githubHeadRef = process.env['GITHUB_HEAD_REF'];
 
-				delete process.env['GITHUB_HEAD_REF'];
+			delete process.env['GITHUB_HEAD_REF'];
 
-				const context = getContext(logger);
+			const context = getContext(logger);
 
-				process.env['GITHUB_HEAD_REF'] = githubHeadRef;
+			process.env['GITHUB_HEAD_REF'] = githubHeadRef;
 
-				expect(expectedResult).to.deep.eq(context);
-				expect(logger.startGroup.calledOnce).to.be.true;
-				expect(logger.endGroup.calledOnce).to.be.true;
-				expect(logger.info.callCount).to.eq(7);
-				expect(logger.error.notCalled).to.be.true;
-				expect(logger.startGroup.calledWith('Gather GitHub context')).to.be.true;
+			expect(expectedResult).to.deep.eq(context);
+			expect(logger.startGroup.calledOnce).to.be.true;
+			expect(logger.endGroup.calledOnce).to.be.true;
+			expect(logger.info.callCount).to.eq(7);
+			expect(logger.error.notCalled).to.be.true;
+			expect(logger.startGroup.calledWith('Gather GitHub context')).to.be.true;
 
-				for (const i in expectedInfoLines) {
-					expect(logger.info.calledWith(expectedInfoLines[i])).to.be.true;
-				}
-			});
+			for (const i in expectedInfoLines) {
+				expect(logger.info.calledWith(expectedInfoLines[i])).to.be.true;
+			}
 		});
 
 		describe('fails', () => {
@@ -134,18 +139,21 @@ describe('github', () => {
 	});
 
 	describe('get inputs', () => {
-		it('succeeds', () => {
+		it('succeeds', async() => {
 			const logger = makeDummyLogger();
-			const inputs = getInputs(logger);
+
+			sandbox.stub(fs, 'access');
+
+			const inputs = await getInputs(logger);
 
 			expect(inputs.awsAccessKeyId).to.eq('aws-access-key-id');
 			expect(inputs.awsSecretAccessKey).to.eq('aws-secret-access-key');
 			expect(inputs.awsSessionToken).to.eq('aws-session-token');
-			expect(inputs.reportPath).to.eq(resolve('./test/data/d2l-test-report-empty.json'));
+			expect(inputs.reportPath).to.eq(resolve('./test/data/d2l-test-report.json'));
 		});
 
 		describe('fails', () => {
-			it('empty input', () => {
+			it('empty input', async() => {
 				const inputAwsAccessKeyId = process.env['INPUT_AWS-ACCESS-KEY-ID'];
 
 				process.env['INPUT_AWS-ACCESS-KEY-ID'] = ' ';
@@ -153,7 +161,7 @@ describe('github', () => {
 				try {
 					const logger = makeDummyLogger();
 
-					getInputs(logger);
+					await getInputs(logger);
 				} catch {
 					return;
 				} finally {
@@ -163,7 +171,7 @@ describe('github', () => {
 				throw new Error('failed');
 			});
 
-			it('non-existent report path', () => {
+			it('non-existent report path', async() => {
 				const inputReportPath = process.env['INPUT_REPORT-PATH'];
 
 				process.env['INPUT_REPORT-PATH'] = 'not a file path';
@@ -171,7 +179,7 @@ describe('github', () => {
 				try {
 					const logger = makeDummyLogger();
 
-					getInputs(logger);
+					await getInputs(logger);
 				} catch {
 					return;
 				} finally {
