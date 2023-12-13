@@ -80,7 +80,7 @@ class TestReportingMochaReporter extends Spec {
 		this._report.summary = {
 			...this._report.summary,
 			totalDuration: stats.duration,
-			state: stats.failures !== 0 ? 'failed' : 'passed',
+			status: stats.failures !== 0 ? 'failed' : 'passed',
 			countPassed: stats.passes,
 			countFailed: stats.failures,
 			countSkipped: stats.pending,
