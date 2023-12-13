@@ -16,13 +16,9 @@
   "dependencies": {
     "@actions/core": "^1",
     "@actions/github": "^6",
-    "@aws-sdk/client-sts": "^3",
-    "@aws-sdk/client-timestream-write": "^3",
     "ajv": "^8",
     "chalk": "^4",
-    "lodash-es": "^4",
-    "uuid": "^9",
-    "yn": "^5"
+    "uuid": "^9"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38",
