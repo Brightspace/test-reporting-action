@@ -80,7 +80,7 @@ class TestReportingMochaReporter extends Spec {
 		this._report.summary = {
 			...this._report.summary,
 			totalDuration: stats.duration,
-			state: stats.failures !== 0 ? 'failed' : 'passed',
+			status: stats.failures !== 0 ? 'failed' : 'passed',
 			countPassed: stats.passes,
 			countFailed: stats.failures,
 			countSkipped: stats.pending,
@@ -109,7 +109,7 @@ class TestReportingMochaReporter extends Spec {
 		const name = makeTestName(test);
 		const values = this._tests.get(name) ?? {};
 
-		values.started = values.started ?? new Date().toISOString();
+		values.started = values.started ?? (new Date()).toISOString();
 		values.location = values.location ?? makeLocation(test.file);
 		values.retries = values.retries === undefined ? 0 : values.retries + 1;
 		values.totalDuration = values.totalDuration ?? 0;
