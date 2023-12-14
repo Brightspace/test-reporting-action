@@ -11,7 +11,7 @@
     "fix": "npm run fix:eslint",
     "fix:eslint": "npm run lint:eslint -- --fix",
     "test": "npm run lint && npm run test:unit",
-    "test:unit": "c8 env-cmd -f test/.env mocha \"test/**/*.test.js\" -R src/internal/mocha-reporter.cjs --retries 3"
+    "test:unit": "c8 env-cmd -f test/.env mocha"
   },
   "dependencies": {
     "@actions/core": "^1",
