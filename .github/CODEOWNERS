@@ -1,1 +1,3 @@
 * @Brightspace/test-reporters
+dist/
+package-lock.json
