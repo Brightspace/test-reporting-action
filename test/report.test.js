@@ -1,7 +1,7 @@
-import { expect } from 'chai';
-import fs from 'fs/promises';
-import { getReport } from '../src/report.js';
 import { createSandbox } from 'sinon';
+import { expect } from 'chai';
+import { finalize } from '../src/report.js';
+import fs from 'fs/promises';
 
 const context = {
 	githubOrganization: 'TestOrganization',
@@ -118,7 +118,7 @@ describe('report', () => {
 		error: sandbox.stub()
 	});
 
-	describe('get report', () => {
+	describe('finalize', () => {
 		let logger;
 
 		beforeEach(() => logger = makeDummyLogger());
@@ -126,7 +126,7 @@ describe('report', () => {
 		it('partial', async() => {
 			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(reportPartial));
 
-			const report = await getReport(logger, context, inputs);
+			const report = await finalize(logger, context, inputs);
 			const { reportId, reportVersion, summary } = report;
 
 			expect(reportId).to.eq(reportPartial.reportId);
@@ -143,7 +143,7 @@ describe('report', () => {
 		it('full', async() => {
 			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(reportFull));
 
-			const report = await getReport(logger, context, inputs);
+			const report = await finalize(logger, context, inputs);
 			const { reportId, reportVersion, summary } = report;
 
 			expect(reportId).to.eq(reportFull.reportId);
@@ -162,7 +162,7 @@ describe('report', () => {
 				sandbox.stub(fs, 'readFile').throws();
 
 				try {
-					await getReport(logger, context, inputs);
+					await finalize(logger, context, inputs);
 				} catch (err) {
 					expect(err.message).to.contain('Report is not valid');
 
@@ -176,7 +176,7 @@ describe('report', () => {
 				sandbox.stub(fs, 'readFile').resolves('this is not json');
 
 				try {
-					await getReport(logger, context, inputs);
+					await finalize(logger, context, inputs);
 				} catch (err) {
 					expect(err.message).to.contain('Report is not valid');
 
@@ -190,7 +190,7 @@ describe('report', () => {
 				sandbox.stub(fs, 'readFile').resolves('{}');
 
 				try {
-					await getReport(logger, context, inputs);
+					await finalize(logger, context, inputs);
 				} catch (err) {
 					expect(err.message).to.contain('Report does not conform to needed schema');
 

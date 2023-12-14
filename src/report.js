@@ -94,8 +94,8 @@ const schema = {
 
 const validate = ajv.compile(schema);
 
-const getReport = async(logger, context, inputs) => {
-	logger.startGroup('Gathering test report');
+const finalize = async(logger, context, inputs) => {
+	logger.startGroup('Finalize test report');
 
 	const { reportPath } = inputs;
 	let report;
@@ -108,14 +108,14 @@ const getReport = async(logger, context, inputs) => {
 		throw new Error('Report is not valid');
 	}
 
-	logger.info('Injecting GitHub context');
+	logger.info('Injecting any missing GitHub context');
 
 	report.summary = {
 		...context,
 		...report.summary
 	};
 
-	logger.info('Validating test report');
+	logger.info('Validating schema');
 
 	if (!validate(report)) {
 		const message = ajv.errorsText(validate.errors, { dataVar: 'report' });
@@ -128,4 +128,8 @@ const getReport = async(logger, context, inputs) => {
 	return report;
 };
 
-export { getReport };
+const submit = async(/*logger, report*/) => {
+
+};
+
+export { finalize, submit };

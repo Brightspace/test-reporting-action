@@ -1,8 +1,8 @@
 import { getContext, getInputs, makeLogger } from '../src/github.js';
+import { createSandbox } from 'sinon';
 import { expect } from 'chai';
 import fs from 'fs/promises';
 import { resolve } from 'path';
-import { createSandbox } from 'sinon';
 
 const captureOutput = () => {
 	let output = '';
@@ -67,12 +67,12 @@ describe('github', () => {
 			gitSha: '0000000000000000000000000000000000000000'
 		};
 		const expectedInfoLines = [
-			'GitHub Organization: TestOrganization',
-			'GitHub Repository: test-repository',
-			'GitHub Workflow: test-workflow.yml',
-			'GitHub RunId: 12345',
-			'GitHub Run Attempt: 1',
-			'Git Branch: test/branch',
+			'GitHub organization: TestOrganization',
+			'GitHub repository: test-repository',
+			'GitHub workflow: test-workflow.yml',
+			'GitHub run ID: 12345',
+			'GitHub run attempt: 1',
+			'Git branch: test/branch',
 			'Git SHA: 0000000000000000000000000000000000000000'
 		];
 		let logger;

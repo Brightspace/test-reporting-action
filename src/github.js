@@ -42,12 +42,12 @@ const getContext = (logger) => {
 		throw new Error('Failed getting GitHub context');
 	}
 
-	logger.info(`GitHub Organization: ${githubOrganization}`);
-	logger.info(`GitHub Repository: ${githubRepository}`);
-	logger.info(`GitHub Workflow: ${githubWorkflow}`);
-	logger.info(`GitHub RunId: ${githubRunId}`);
-	logger.info(`GitHub Run Attempt: ${githubRunAttempt}`);
-	logger.info(`Git Branch: ${gitBranch}`);
+	logger.info(`GitHub organization: ${githubOrganization}`);
+	logger.info(`GitHub repository: ${githubRepository}`);
+	logger.info(`GitHub workflow: ${githubWorkflow}`);
+	logger.info(`GitHub run ID: ${githubRunId}`);
+	logger.info(`GitHub run attempt: ${githubRunAttempt}`);
+	logger.info(`Git branch: ${gitBranch}`);
 	logger.info(`Git SHA: ${gitSha}`);
 	logger.endGroup();
 
@@ -79,7 +79,7 @@ const getInputs = async(logger) => {
 	const awsSecretAccessKey = getStringInput('aws-secret-access-key');
 	const awsSessionToken = getStringInput('aws-session-token');
 
-	logger.info('Credentials gathered');
+	logger.info('Gather credentials');
 
 	const reportPath = resolve(getStringInput('report-path'));
 
@@ -89,7 +89,7 @@ const getInputs = async(logger) => {
 		throw new Error('Report path must exists');
 	}
 
-	logger.info(`Report Path: ${reportPath}`);
+	logger.info(`Report path: ${reportPath}`);
 	logger.endGroup();
 
 	return {
