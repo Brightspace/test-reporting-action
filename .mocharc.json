@@ -1,0 +1,5 @@
+{
+  "spec": "test/**/*.test.js",
+  "reporter": "src/internal/mocha-reporter.cjs",
+  "retries": 3
+}
