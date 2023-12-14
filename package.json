@@ -1,7 +1,8 @@
 {
   "name": "test-reporting-action",
   "description": "GitHub Action for reporting test data",
-  "private": true,
+  "author": "D2L Corporation",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "prebuild": "rimraf dist/",

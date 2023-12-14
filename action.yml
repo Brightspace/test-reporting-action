@@ -1,5 +1,6 @@
 name: Test Reporting
 description: Report testing data from directly in your GitHub Action runs
+author: D2L Corporation
 inputs:
   aws-access-key-id:
     description: >-
