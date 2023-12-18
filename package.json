@@ -20,11 +20,14 @@
   "dependencies": {
     "@actions/core": "^1",
     "@actions/github": "^6",
+    "@aws-sdk/client-sts": "^3",
+    "@aws-sdk/client-timestream-write": "^3",
     "ajv": "^8",
     "ajv-formats": "^2"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38",
+    "aws-sdk-client-mock": "^3",
     "c8": "^8",
     "chai": "^4",
     "d2l-test-reporting": "github:Brightspace/test-reporting-node",
