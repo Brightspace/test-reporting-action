@@ -1,10 +1,11 @@
+import { assumeRole } from './aws.js';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import fs from 'fs/promises';
 
 const ajv = new Ajv({ verbose: true });
 
-addFormats(ajv, ['date-time', 'uri', 'uuid' ]);
+addFormats(ajv, ['date-time', 'uri', 'uuid']);
 
 const schema = {
 	type: 'object',
@@ -128,8 +129,45 @@ const finalize = async(logger, context, inputs) => {
 	return report;
 };
 
-const submit = async(/*logger, report*/) => {
+const submit = async(logger, context, inputs, /*report*/) => {
+	logger.startGroup('Submit report');
 
+	let credentials;
+
+	try {
+		logger.info('Assume required role');
+
+		const { githubOrganization: org, githubRepository: repo } = context;
+		const region = 'us-east-1';
+		const sessionName = `test-reporting-${(new Date()).getTime()}`;
+		const tags = [
+			{ Key: 'Org', Value: org },
+			{ Key: 'Repo', Value: repo }
+		];
+		const { awsAccessKeyId, awsSecretAccessKey, awsSessionToken } = inputs;
+		const inputCredentials = {
+			accessKeyId: awsAccessKeyId,
+			secretAccessKey: awsSecretAccessKey,
+			sessionToken: awsSessionToken
+		};
+
+		credentials = await assumeRole(
+			region,
+			inputCredentials,
+			'arn:aws:iam::427469055187:role/test-reporting-github',
+			sessionName,
+			tags
+		);
+	} catch(err) {
+		throw new Error('Unable to assume required role');
+	}
+
+	// generate summary record
+	// generate details record batches
+	// submit summary record
+	// submit details records
+
+	logger.endGroup();
 };
 
 export { finalize, submit };

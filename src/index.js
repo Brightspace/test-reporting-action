@@ -9,7 +9,7 @@ import { finalize, submit } from './report.js';
 		const inputs = await getInputs(logger);
 		const report = await finalize(logger, context, inputs);
 
-		await submit(logger, inputs, report);
+		await submit(logger, context, inputs, report);
 	} catch (err) {
 		setFailed(err.message);
 

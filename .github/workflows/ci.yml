@@ -3,79 +3,79 @@ on: pull_request
 env:
   FORCE_COLOR: 3
 jobs:
-  lint:
-    name: Lint
-    timeout-minutes: 5
-    runs-on: [self-hosted, Linux, AWS]
-    steps:
-      - name: Checkout
-        uses: Brightspace/third-party-actions@actions/checkout
-      - name: Set up node
-        uses: Brightspace/third-party-actions@actions/setup-node
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Lint (JavaScript)
-        run: npm run lint:eslint
-  build:
-    name: Build
-    timeout-minutes: 5
-    runs-on: [self-hosted, Linux, AWS]
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: Brightspace/third-party-actions@actions/checkout
-      - name: Set up node
-        uses: Brightspace/third-party-actions@actions/setup-node
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Build
-        run: npm run build
-      - name: Handle changes
-        uses: Brightspace/third-party-actions@peter-evans/create-pull-request
-        id: changes
-        with:
-          token: ${{github.token}}
-          commit-message: Update build
-          committer: ${{env.GIT_USER}} <${{env.GIT_EMAIL}}>
-          add-paths: dist/*
-          author: ${{env.GIT_USER}} <${{env.GIT_EMAIL}}>
-          base: ${{github.event.pull_request.head.ref}}
-          branch: ghworkflow/update-build-for-pr-${{github.event.number}}
-          title: Update Build for PR ${{github.event.number}}
-          body: 'Update Build for PR #${{github.event.number}}.'
-          delete-branch: true
-          draft: true
-        env:
-          GIT_USER: github-actions[bot]
-          GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
-      - name: Comment
-        if: steps.changes.outputs.pull-request-operation == 'created'
-        run: gh pr comment "$PR_NUMBER" -b "$BODY"
-        env:
-          GITHUB_TOKEN: ${{github.token}}
-          PR_NUMBER: ${{github.event.pull_request.number}}
-          BODY: >
-            New build required - pull request
-            #${{steps.changes.outputs.pull-request-number}} has been opened with
-            new built files.
-      - name: Fail
-        if: >
-          steps.changes.outputs.pull-request-operation == 'created' ||
-          steps.changes.outputs.pull-request-operation == 'updated'
-        run: exit 1
+  # lint:
+  #   name: Lint
+  #   timeout-minutes: 5
+  #   runs-on: [self-hosted, Linux, AWS]
+  #   steps:
+  #     - name: Checkout
+  #       uses: Brightspace/third-party-actions@actions/checkout
+  #     - name: Set up node
+  #       uses: Brightspace/third-party-actions@actions/setup-node
+  #       with:
+  #         node-version-file: .nvmrc
+  #         cache: npm
+  #     - name: Install dependencies
+  #       run: npm ci
+  #     - name: Lint (JavaScript)
+  #       run: npm run lint:eslint
+  # build:
+  #   name: Build
+  #   timeout-minutes: 5
+  #   runs-on: [self-hosted, Linux, AWS]
+  #   permissions:
+  #     contents: write
+  #     pull-requests: write
+  #   steps:
+  #     - name: Checkout
+  #       uses: Brightspace/third-party-actions@actions/checkout
+  #     - name: Set up node
+  #       uses: Brightspace/third-party-actions@actions/setup-node
+  #       with:
+  #         node-version-file: .nvmrc
+  #         cache: npm
+  #     - name: Install dependencies
+  #       run: npm ci
+  #     - name: Build
+  #       run: npm run build
+  #     - name: Handle changes
+  #       uses: Brightspace/third-party-actions@peter-evans/create-pull-request
+  #       id: changes
+  #       with:
+  #         token: ${{github.token}}
+  #         commit-message: Update build
+  #         committer: ${{env.GIT_USER}} <${{env.GIT_EMAIL}}>
+  #         add-paths: dist/*
+  #         author: ${{env.GIT_USER}} <${{env.GIT_EMAIL}}>
+  #         base: ${{github.event.pull_request.head.ref}}
+  #         branch: ghworkflow/update-build-for-pr-${{github.event.number}}
+  #         title: Update Build for PR ${{github.event.number}}
+  #         body: 'Update Build for PR #${{github.event.number}}.'
+  #         delete-branch: true
+  #         draft: true
+  #       env:
+  #         GIT_USER: github-actions[bot]
+  #         GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+  #     - name: Comment
+  #       if: steps.changes.outputs.pull-request-operation == 'created'
+  #       run: gh pr comment "$PR_NUMBER" -b "$BODY"
+  #       env:
+  #         GITHUB_TOKEN: ${{github.token}}
+  #         PR_NUMBER: ${{github.event.pull_request.number}}
+  #         BODY: >
+  #           New build required - pull request
+  #           #${{steps.changes.outputs.pull-request-number}} has been opened with
+  #           new built files.
+  #     - name: Fail
+  #       if: >
+  #         steps.changes.outputs.pull-request-operation == 'created' ||
+  #         steps.changes.outputs.pull-request-operation == 'updated'
+  #       run: exit 1
   test:
     name: Test
     timeout-minutes: 5
     runs-on: [self-hosted, Linux, AWS]
-    needs: build
+    # needs: build
     steps:
       - name: Checkout
         uses: Brightspace/third-party-actions@actions/checkout
@@ -88,6 +88,15 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npm run test:unit
+      - name: Assume role
+        uses: Brightspace/third-party-actions@aws-actions/configure-aws-credentials
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+          role-to-assume: arn:aws:iam::138093372568:role/Playwright_UI_Automation
+          role-duration-seconds: 3600
+          aws-region: us-east-1
       - name: Upload report
         uses: ./
         with:

@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "prebuild": "rimraf dist/",
-    "build": "ncc build src/index.js -m -o dist/",
+    "build": "ncc build src/index.js --minify --out dist/",
     "lint": "npm run lint:eslint",
     "lint:eslint": "eslint . --ext .js,.cjs",
     "fix": "npm run fix:eslint",
@@ -14,9 +14,14 @@
     "test": "npm run lint && npm run test:unit",
     "test:unit": "c8 env-cmd -f test/.env mocha"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@actions/core": "^1",
     "@actions/github": "^6",
+    "@aws-sdk/client-sts": "^3",
+    "@aws-sdk/client-timestream-write": "^3",
     "ajv": "^8",
     "ajv-formats": "^2"
   },
