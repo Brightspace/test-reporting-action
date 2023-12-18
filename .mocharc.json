@@ -1,5 +1,5 @@
 {
   "spec": "test/**/*.test.js",
-  "reporter": "src/internal/mocha-reporter.cjs",
+  "reporter": "d2l-test-reporting/reporters/mocha.js",
   "retries": 3
 }
