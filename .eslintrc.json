@@ -3,6 +3,9 @@
   "extends": [
     "brightspace/node-config"
   ],
+  "rules": {
+    "comma-dangle": "error"
+  },
   "parserOptions": {
     "sourceType": "module",
     "ecmaVersion": 2020

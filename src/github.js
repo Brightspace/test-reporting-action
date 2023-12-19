@@ -19,14 +19,12 @@ const getContext = (logger) => {
 
 	try {
 		const { repo: { owner, repo }, ref, runId } = gitHubContext;
-		const {
-			env: {
-				GITHUB_WORKFLOW_REF,
-				GITHUB_RUN_ATTEMPT,
-				GITHUB_HEAD_REF,
-				GITHUB_SHA
-			}
-		} = process;
+		const { env: {
+			GITHUB_WORKFLOW_REF,
+			GITHUB_RUN_ATTEMPT,
+			GITHUB_HEAD_REF,
+			GITHUB_SHA
+		} } = process;
 		const [workflowPath] = GITHUB_WORKFLOW_REF.split('@');
 		const workflowRegex = new RegExp(`^${owner}/${repo}/.github/workflows/`);
 		const branchRef = GITHUB_HEAD_REF || ref;
@@ -39,7 +37,7 @@ const getContext = (logger) => {
 		gitBranch = branchRef.replace(/^refs\/heads\//i, '');
 		gitSha = GITHUB_SHA;
 	} catch {
-		throw new Error('Failed getting GitHub context');
+		throw new Error('Unable to gather GitHub context');
 	}
 
 	logger.info(`GitHub organization: ${githubOrganization}`);
