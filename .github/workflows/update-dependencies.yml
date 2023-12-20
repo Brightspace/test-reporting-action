@@ -12,7 +12,7 @@ jobs:
   update:
     name: Update Dependencies
     timeout-minutes: 10
-    runs-on: [self-hosted, Linux, AWS]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: Brightspace/third-party-actions@actions/checkout
