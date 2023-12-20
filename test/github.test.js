@@ -127,7 +127,9 @@ describe('github', () => {
 					const logger = makeDummyLogger();
 
 					getContext(logger);
-				} catch {
+				} catch (err) {
+					expect(err.message).to.eq('');
+
 					return;
 				} finally {
 					process.env['GITHUB_WORKFLOW_REF'] = githubWorkflowRef;
@@ -162,7 +164,9 @@ describe('github', () => {
 					const logger = makeDummyLogger();
 
 					await getInputs(logger);
-				} catch {
+				} catch (err) {
+					expect(err.message).to.eq('');
+
 					return;
 				} finally {
 					process.env['INPUT_AWS-ACCESS-KEY-ID'] = inputAwsAccessKeyId;
@@ -180,7 +184,9 @@ describe('github', () => {
 					const logger = makeDummyLogger();
 
 					await getInputs(logger);
-				} catch {
+				} catch (err) {
+					expect(err.message).to.eq('');
+
 					return;
 				} finally {
 					process.env['INPUT_REPORT-PATH'] = inputReportPath;
