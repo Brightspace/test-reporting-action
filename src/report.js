@@ -1,5 +1,5 @@
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
-import { MeasureValueType, TimeUnit, TimestreamWriteClient, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
+import { MeasureValueType, TimestreamWriteClient, TimeUnit, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import fs from 'fs/promises';
@@ -10,7 +10,30 @@ addFormats(ajv, ['date-time', 'uri', 'uuid']);
 
 const gitHubPattern = '[A-Za-z0-9_.-]+';
 const nonEmptyStringPattern = '^[^\\s].+[^\\s]$';
-const schema = {
+const githubContextItems = {
+	githubOrganization: { type: 'string', pattern: gitHubPattern },
+	githubRepository: { type: 'string', pattern: gitHubPattern },
+	githubWorkflow: { type: 'string', pattern: nonEmptyStringPattern },
+	githubRunId: { type: 'integer', minimum: 0 },
+	githubRunAttempt: { type: 'integer', minimum: 1 },
+	gitBranch: { type: 'string', pattern: nonEmptyStringPattern },
+	gitSha: { type: 'string', pattern: '([A-Fa-f0-9]{40})' }
+};
+const githubContextSchema = {
+	type: 'object',
+	properties: githubContextItems,
+	required: [
+		'githubOrganization',
+		'githubRepository',
+		'githubWorkflow',
+		'githubRunId',
+		'githubRunAttempt',
+		'gitBranch',
+		'gitSha'
+	],
+	additionalProperties: true
+};
+const fullReportSchema = {
 	type: 'object',
 	properties: {
 		reportId: { type: 'string', format: 'uuid' },
@@ -18,13 +41,7 @@ const schema = {
 		summary: {
 			type: 'object',
 			properties: {
-				githubOrganization: { type: 'string', pattern: gitHubPattern },
-				githubRepository: { type: 'string', pattern: gitHubPattern },
-				githubWorkflow: { type: 'string', pattern: nonEmptyStringPattern },
-				githubRunId: { type: 'integer', minimum: 0 },
-				githubRunAttempt: { type: 'integer', minimum: 1 },
-				gitBranch: { type: 'string', pattern: nonEmptyStringPattern },
-				gitSha: { type: 'string', pattern: '([A-Fa-f0-9]{40})' },
+				...githubContextItems,
 				lmsBuild: { type: 'string', pattern: '([0-9]{2}\\.){3}[0-9]{5}' },
 				lmsInstance: { type: 'string', format: 'uri' },
 				operatingSystem: { type: 'string', enum: ['windows', 'linux', 'mac'] },
@@ -100,41 +117,8 @@ const databaseName = 'test_reporting';
 const { BIGINT, VARCHAR, MULTI } = MeasureValueType;
 const { MILLISECONDS } = TimeUnit;
 
-const validate = ajv.compile(schema);
-
-const finalize = async(logger, context, inputs) => {
-	logger.startGroup('Finalize test report');
-
-	const { reportPath } = inputs;
-	let report;
-
-	try {
-		const reportRaw = await fs.readFile(reportPath, 'utf8');
-
-		report = JSON.parse(reportRaw);
-	} catch {
-		throw new Error('Report is not valid');
-	}
-
-	logger.info('Inject any missing GitHub context');
-
-	report.summary = {
-		...context,
-		...report.summary
-	};
-
-	logger.info('Validate schema');
-
-	if (!validate(report)) {
-		const message = ajv.errorsText(validate.errors, { dataVar: 'report' });
-
-		throw new Error(`Report does not conform to needed schema: ${message}`);
-	}
-
-	logger.endGroup();
-
-	return report;
-};
+const validateFullReport = ajv.compile(fullReportSchema);
+const validateGitHubContext = ajv.compile(githubContextSchema);
 
 const makeSummaryRecord = (report) => {
 	const { reportId, summary } = report;
@@ -257,6 +241,58 @@ const writeTimestreamRecords = async(region, credentials, input) => {
 	const command = new WriteRecordsCommand(input);
 
 	await client.send(command);
+};
+
+const finalize = async(logger, context, inputs) => {
+	logger.startGroup('Finalize test report');
+
+	const { reportPath, injectGitHubContext } = inputs;
+	let report;
+
+	try {
+		const reportRaw = await fs.readFile(reportPath, 'utf8');
+
+		report = JSON.parse(reportRaw);
+	} catch {
+		throw new Error('Report is not valid');
+	}
+
+	const { summary } = report;
+
+	if (injectGitHubContext === 'force') {
+		logger.warning('GitHub context missing or incomplete');
+		logger.info('Inject missing GitHub context');
+
+		report.summary = {
+			...summary,
+			...context
+		};
+	} else if (!validateGitHubContext(summary)) {
+		if (injectGitHubContext === 'auto') {
+			logger.warning('GitHub context missing or incomplete');
+			logger.info('Inject missing GitHub context');
+
+			report.summary = {
+				...summary,
+				...context
+			};
+		} else if (injectGitHubContext === 'off') {
+			throw new Error('GitHub context missing or incomplete');
+		}
+	}
+
+	logger.info('Validate schema');
+
+	if (!validateFullReport(report)) {
+		const { errors } = validateFullReport;
+		const message = ajv.errorsText(errors, { dataVar: 'report' });
+
+		throw new Error(`Report does not conform to needed schema: ${message}`);
+	}
+
+	logger.endGroup();
+
+	return report;
 };
 
 const submit = async(logger, context, inputs, report) => {

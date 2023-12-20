@@ -18,7 +18,8 @@ const testContext = {
 const testInputs = {
 	awsAccessKeyId: 'test-access-key-id',
 	awsSecretAccessKey: 'test-secret-access-key',
-	awsSessionToken: 'test-session-token'
+	awsSessionToken: 'test-session-token',
+	injectGitHubContext: 'auto'
 };
 const testReportMinimal = {
 	reportId: '00000000-0000-0000-0000-000000000000',
@@ -96,6 +97,7 @@ describe('report', () => {
 		startGroup: sandbox.stub(),
 		endGroup: sandbox.stub(),
 		info: sandbox.stub(),
+		warning: sandbox.stub(),
 		error: sandbox.stub()
 	});
 

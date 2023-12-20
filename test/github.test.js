@@ -29,6 +29,7 @@ describe('github', () => {
 		startGroup: sandbox.stub(),
 		endGroup: sandbox.stub(),
 		info: sandbox.stub(),
+		warning: sandbox.stub(),
 		error: sandbox.stub()
 	});
 
@@ -168,7 +169,7 @@ describe('github', () => {
 
 					await getInputs(logger);
 				} catch (err) {
-					expect(err.message).to.contain('Input must be a non-empty string');
+					expect(err.message).to.contain('must be a non-empty string');
 
 					return;
 				} finally {

@@ -1,10 +1,20 @@
-import { info, error, startGroup, endGroup } from '@actions/core';
+import { endGroup, error, info, startGroup, warning } from '@actions/core';
 import fs from 'fs/promises';
 import { context as gitHubContext } from '@actions/github';
 import { getInput, setFailed } from '@actions/core';
 import { resolve } from 'path';
 
-const makeLogger = () => ({ startGroup, endGroup, info, error });
+const makeLogger = () => ({ startGroup, endGroup, info, warning, error });
+
+const getStringInput = (name, lowerCase = false) => {
+	const input = getInput(name, { required: true });
+
+	if (input === '') {
+		throw new Error(`Input '${name}' must be a non-empty string`);
+	}
+
+	return lowerCase ? input.toLowerCase() : input;
+};
 
 const getContext = (logger) => {
 	logger.startGroup('Gather GitHub context');
@@ -60,24 +70,15 @@ const getContext = (logger) => {
 	};
 };
 
-const getStringInput = (name) => {
-	const input = getInput(name, { required: true });
-
-	if (input === '') {
-		throw new Error(`Input must be a non-empty string and is not: ${name}`);
-	}
-
-	return input;
-};
-
 const getInputs = async(logger) => {
 	logger.startGroup('Gather GitHub inputs');
+	logger.info('Gather credentials');
 
 	const awsAccessKeyId = getStringInput('aws-access-key-id');
 	const awsSecretAccessKey = getStringInput('aws-secret-access-key');
 	const awsSessionToken = getStringInput('aws-session-token');
 
-	logger.info('Gather credentials');
+	logger.info('Determine report path');
 
 	const reportPath = resolve(getStringInput('report-path'));
 
@@ -88,13 +89,23 @@ const getInputs = async(logger) => {
 	}
 
 	logger.info(`Report path: ${reportPath}`);
+	logger.info('Determine inject context mode');
+
+	const injectGitHubContext = getStringInput('inject-github-context', true);
+
+	if (!['auto', 'force', 'off'].includes(injectGitHubContext)) {
+		throw new Error('Inject context mode invalid');
+	}
+
+	logger.info(`Inject context mode '${injectGitHubContext}' invalid`);
 	logger.endGroup();
 
 	return {
 		awsAccessKeyId,
 		awsSecretAccessKey,
 		awsSessionToken,
-		reportPath
+		reportPath,
+		injectGitHubContext
 	};
 };
 
