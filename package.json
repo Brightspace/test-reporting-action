@@ -30,10 +30,10 @@
     "aws-sdk-client-mock": "^3",
     "c8": "^8",
     "chai": "^4",
-    "d2l-test-reporting": "github:Brightspace/test-reporting-node",
+    "d2l-test-reporting": "^0.0.2",
     "env-cmd": "^10",
     "eslint": "^8",
-    "eslint-config-brightspace": "^0.25",
+    "eslint-config-brightspace": "^1",
     "mocha": "^10",
     "rimraf": "^5",
     "sinon": "^17"
