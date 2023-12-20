@@ -1,8 +1,8 @@
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
+import { finalize, submit } from '../src/report.js';
 import { TimestreamWriteClient, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
 import { createSandbox } from 'sinon';
 import { expect } from 'chai';
-import { finalize, submit } from '../src/report.js';
 import fs from 'fs/promises';
 import { mockClient } from 'aws-sdk-client-mock';
 

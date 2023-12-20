@@ -127,7 +127,9 @@ describe('github', () => {
 					const logger = makeDummyLogger();
 
 					getContext(logger);
-				} catch {
+				} catch (err) {
+					expect(err.message).to.eq('Unable to gather GitHub context');
+
 					return;
 				} finally {
 					process.env['GITHUB_WORKFLOW_REF'] = githubWorkflowRef;
@@ -149,7 +151,10 @@ describe('github', () => {
 			expect(inputs.awsAccessKeyId).to.eq('aws-access-key-id');
 			expect(inputs.awsSecretAccessKey).to.eq('aws-secret-access-key');
 			expect(inputs.awsSessionToken).to.eq('aws-session-token');
-			expect(inputs.reportPath).to.eq(resolve('./test/data/d2l-test-report.json'));
+
+			const path = resolve('./test/data/d2l-test-report.json');
+
+			expect(inputs.reportPath).to.eq(path);
 		});
 
 		describe('fails', () => {
@@ -162,7 +167,9 @@ describe('github', () => {
 					const logger = makeDummyLogger();
 
 					await getInputs(logger);
-				} catch {
+				} catch (err) {
+					expect(err.message).to.contain('Input must be a non-empty string');
+
 					return;
 				} finally {
 					process.env['INPUT_AWS-ACCESS-KEY-ID'] = inputAwsAccessKeyId;
@@ -180,7 +187,9 @@ describe('github', () => {
 					const logger = makeDummyLogger();
 
 					await getInputs(logger);
-				} catch {
+				} catch (err) {
+					expect(err.message).to.eq('Report path must exists');
+
 					return;
 				} finally {
 					process.env['INPUT_REPORT-PATH'] = inputReportPath;
