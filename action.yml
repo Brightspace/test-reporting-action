@@ -21,6 +21,10 @@ inputs:
     description: Path to report JSON file
     required: true
     default: ./d2l-test-report.json
+  inject-github-context:
+    description: Change injection of GitHub Actions context at report submission time
+    required: true
+    default: auto
 runs:
   using: node20
   main: dist/index.js
