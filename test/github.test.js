@@ -135,6 +135,8 @@ describe('github', () => {
 
 		describe('fails', () => {
 			it('not in github actions', () => {
+				sandbox.stub(process, 'env').value({});
+
 				try {
 					const logger = makeDummyLogger();
 
