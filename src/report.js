@@ -138,8 +138,31 @@ const makeSummaryRecord = (report) => {
 		countPassed,
 		countFailed,
 		countSkipped,
-		countFlaky
+		countFlaky,
+		lmsBuild,
+		lmsInstance
 	} = summary;
+
+	const dimensions = [
+		{ Name: 'report_id', Value: reportId },
+		{ Name: 'github_organization', Value: githubOrganization },
+		{ Name: 'github_repository', Value: githubRepository },
+		{ Name: 'github_workflow', Value: githubWorkflow },
+		{ Name: 'github_run_id', Value: `${githubRunId}` },
+		{ Name: 'github_run_attempt', Value: `${githubRunAttempt}` },
+		{ Name: 'git_branch', Value: gitBranch },
+		{ Name: 'git_sha', Value: gitSha },
+		{ Name: 'operating_system', Value: operatingSystem },
+		{ Name: 'framework', Value: framework }
+	];
+
+	if (lmsBuild) {
+		dimensions.push({ Name: 'lms_build', Value: lmsBuild });
+	}
+
+	if (lmsInstance) {
+		dimensions.push({ Name: 'lms_instance', Value: lmsInstance });
+	}
 
 	return {
 		DatabaseName: databaseName,
@@ -158,18 +181,7 @@ const makeSummaryRecord = (report) => {
 				{ Name: 'count_skipped', Value: `${countSkipped}`, Type: BIGINT },
 				{ Name: 'count_flaky', Value: `${countFlaky}`, Type: BIGINT }
 			],
-			Dimensions: [
-				{ Name: 'report_id', Value: reportId },
-				{ Name: 'github_organization', Value: githubOrganization },
-				{ Name: 'github_repository', Value: githubRepository },
-				{ Name: 'github_workflow', Value: githubWorkflow },
-				{ Name: 'github_run_id', Value: `${githubRunId}` },
-				{ Name: 'github_run_attempt', Value: `${githubRunAttempt}` },
-				{ Name: 'git_branch', Value: gitBranch },
-				{ Name: 'git_sha', Value: gitSha },
-				{ Name: 'operating_system', Value: operatingSystem },
-				{ Name: 'framework', Value: framework }
-			]
+			Dimensions: dimensions
 		}]
 	};
 };
@@ -184,8 +196,18 @@ const makeDetailRecords = (report) => {
 			retries,
 			totalDuration,
 			status,
-			duration
+			duration,
+			browser
 		} = detail;
+
+		const dimensions = [
+			{ Name: 'name', Value: name },
+			{ Name: 'location', Value: location }
+		];
+
+		if (browser) {
+			dimensions.push({ Name: 'browser', Value: browser });
+		}
 
 		return {
 			Time: `${Date.parse(started)}`,
@@ -196,10 +218,7 @@ const makeDetailRecords = (report) => {
 				{ Name: 'retries', Value: `${retries}`, Type: BIGINT },
 				{ Name: 'status', Value: status, Type: VARCHAR }
 			],
-			Dimensions: [
-				{ Name: 'name', Value: name },
-				{ Name: 'location', Value: location }
-			]
+			Dimensions: dimensions
 		};
 	});
 
