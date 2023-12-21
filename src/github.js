@@ -1,6 +1,6 @@
 import { endGroup, error, info, startGroup, warning } from '@actions/core';
+import { getContext as getGitHubContext } from 'd2l-test-reporting/helpers/github.js';
 import fs from 'fs/promises';
-import { context as gitHubContext } from '@actions/github';
 import { getInput, setFailed } from '@actions/core';
 import { resolve } from 'path';
 
@@ -19,55 +19,24 @@ const getStringInput = (name, lowerCase = false) => {
 const getContext = (logger) => {
 	logger.startGroup('Gather GitHub context');
 
-	let githubOrganization;
-	let githubRepository;
-	let githubWorkflow;
-	let githubRunId;
-	let githubRunAttempt;
-	let gitBranch;
-	let gitSha;
+	let context;
 
 	try {
-		const { repo: { owner, repo }, ref, runId } = gitHubContext;
-		const { env: {
-			GITHUB_WORKFLOW_REF,
-			GITHUB_RUN_ATTEMPT,
-			GITHUB_HEAD_REF,
-			GITHUB_SHA
-		} } = process;
-		const [workflowPath] = GITHUB_WORKFLOW_REF.split('@');
-		const workflowRegex = new RegExp(`^${owner}/${repo}/.github/workflows/`);
-		const branchRef = GITHUB_HEAD_REF || ref;
-
-		githubOrganization = owner;
-		githubRepository = repo;
-		githubWorkflow = workflowPath.replace(workflowRegex, '');
-		githubRunId = runId;
-		githubRunAttempt = parseInt(GITHUB_RUN_ATTEMPT, 10);
-		gitBranch = branchRef.replace(/^refs\/heads\//i, '');
-		gitSha = GITHUB_SHA;
+		context = getGitHubContext();
 	} catch {
 		throw new Error('Unable to gather GitHub context');
 	}
 
-	logger.info(`GitHub organization: ${githubOrganization}`);
-	logger.info(`GitHub repository: ${githubRepository}`);
-	logger.info(`GitHub workflow: ${githubWorkflow}`);
-	logger.info(`GitHub run ID: ${githubRunId}`);
-	logger.info(`GitHub run attempt: ${githubRunAttempt}`);
-	logger.info(`Git branch: ${gitBranch}`);
-	logger.info(`Git SHA: ${gitSha}`);
+	logger.info(`GitHub organization: ${context.githubOrganization}`);
+	logger.info(`GitHub repository: ${context.githubRepository}`);
+	logger.info(`GitHub workflow: ${context.githubWorkflow}`);
+	logger.info(`GitHub run ID: ${context.githubRunId}`);
+	logger.info(`GitHub run attempt: ${context.githubRunAttempt}`);
+	logger.info(`Git branch: ${context.gitBranch}`);
+	logger.info(`Git SHA: ${context.gitSha}`);
 	logger.endGroup();
 
-	return {
-		githubOrganization,
-		githubRepository,
-		githubWorkflow,
-		githubRunId,
-		githubRunAttempt,
-		gitBranch,
-		gitSha
-	};
+	return context;
 };
 
 const getInputs = async(logger) => {
@@ -109,4 +78,4 @@ const getInputs = async(logger) => {
 	};
 };
 
-export { getContext as getContext, getInputs, makeLogger, setFailed };
+export { getContext, getInputs, makeLogger, setFailed };

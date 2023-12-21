@@ -83,6 +83,17 @@ describe('github', () => {
 		});
 
 		it('pull request', () => {
+			sandbox.stub(process, 'env').value({
+				'GITHUB_ACTIONS': '1',
+				'GITHUB_HEAD_REF': 'refs/heads/test/branch',
+				'GITHUB_REF': 'refs/heads/test/branch',
+				'GITHUB_REPOSITORY': 'TestOrganization/test-repository',
+				'GITHUB_RUN_ATTEMPT': '1',
+				'GITHUB_RUN_ID': '12345',
+				'GITHUB_SHA': '0000000000000000000000000000000000000000',
+				'GITHUB_WORKFLOW_REF': 'TestOrganization/test-repository/.github/workflows/test-workflow.yml@test/branch'
+			});
+
 			const context = getContext(logger);
 
 			expect(expectedResult).to.deep.eq(context);
@@ -98,13 +109,17 @@ describe('github', () => {
 		});
 
 		it('branch', () => {
-			const githubHeadRef = process.env['GITHUB_HEAD_REF'];
-
-			delete process.env['GITHUB_HEAD_REF'];
+			sandbox.stub(process, 'env').value({
+				'GITHUB_ACTIONS': '1',
+				'GITHUB_REF': 'refs/heads/test/branch',
+				'GITHUB_REPOSITORY': 'TestOrganization/test-repository',
+				'GITHUB_RUN_ATTEMPT': '1',
+				'GITHUB_RUN_ID': '12345',
+				'GITHUB_SHA': '0000000000000000000000000000000000000000',
+				'GITHUB_WORKFLOW_REF': 'TestOrganization/test-repository/.github/workflows/test-workflow.yml@test/branch'
+			});
 
 			const context = getContext(logger);
-
-			process.env['GITHUB_HEAD_REF'] = githubHeadRef;
 
 			expect(expectedResult).to.deep.eq(context);
 			expect(logger.startGroup.calledOnce).to.be.true;
@@ -119,11 +134,7 @@ describe('github', () => {
 		});
 
 		describe('fails', () => {
-			it('missing input', () => {
-				const githubWorkflowRef = process.env['GITHUB_WORKFLOW_REF'];
-
-				delete process.env['GITHUB_WORKFLOW_REF'];
-
+			it('not in github actions', () => {
 				try {
 					const logger = makeDummyLogger();
 
@@ -132,8 +143,6 @@ describe('github', () => {
 					expect(err.message).to.eq('Unable to gather GitHub context');
 
 					return;
-				} finally {
-					process.env['GITHUB_WORKFLOW_REF'] = githubWorkflowRef;
 				}
 
 				throw new Error('failed');
@@ -146,6 +155,13 @@ describe('github', () => {
 			const logger = makeDummyLogger();
 
 			sandbox.stub(fs, 'access');
+			sandbox.stub(process, 'env').value({
+				'INPUT_AWS-ACCESS-KEY-ID': 'aws-access-key-id',
+				'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
+				'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
+				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
+				'INPUT_INJECT-GITHUB-CONTEXT': 'auto'
+			});
 
 			const inputs = await getInputs(logger);
 
@@ -160,9 +176,13 @@ describe('github', () => {
 
 		describe('fails', () => {
 			it('empty input', async() => {
-				const inputAwsAccessKeyId = process.env['INPUT_AWS-ACCESS-KEY-ID'];
-
-				process.env['INPUT_AWS-ACCESS-KEY-ID'] = ' ';
+				sandbox.stub(process, 'env').value({
+					'INPUT_AWS-ACCESS-KEY-ID': ' ',
+					'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
+					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
+					'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
+					'INPUT_INJECT-GITHUB-CONTEXT': 'auto'
+				});
 
 				try {
 					const logger = makeDummyLogger();
@@ -172,17 +192,19 @@ describe('github', () => {
 					expect(err.message).to.contain('must be a non-empty string');
 
 					return;
-				} finally {
-					process.env['INPUT_AWS-ACCESS-KEY-ID'] = inputAwsAccessKeyId;
 				}
 
 				throw new Error('failed');
 			});
 
 			it('non-existent report path', async() => {
-				const inputReportPath = process.env['INPUT_REPORT-PATH'];
-
-				process.env['INPUT_REPORT-PATH'] = 'not a file path';
+				sandbox.stub(process, 'env').value({
+					'INPUT_AWS-ACCESS-KEY-ID': 'aws-access-key-id',
+					'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
+					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
+					'INPUT_REPORT-PATH': 'not a file',
+					'INPUT_INJECT-GITHUB-CONTEXT': 'auto'
+				});
 
 				try {
 					const logger = makeDummyLogger();
@@ -192,8 +214,6 @@ describe('github', () => {
 					expect(err.message).to.eq('Report path must exists');
 
 					return;
-				} finally {
-					process.env['INPUT_REPORT-PATH'] = inputReportPath;
 				}
 
 				throw new Error('failed');
