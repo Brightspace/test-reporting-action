@@ -1,7 +1,7 @@
 import { endGroup, error, info, startGroup, warning } from '@actions/core';
 import { getContext as getGitHubContext } from 'd2l-test-reporting/helpers/github.js';
 import fs from 'fs/promises';
-import { getInput, setFailed } from '@actions/core';
+import { getInput, getBooleanInput, setFailed } from '@actions/core';
 import { resolve } from 'path';
 
 const makeLogger = () => ({ startGroup, endGroup, info, warning, error });
@@ -67,6 +67,9 @@ const getInputs = async(logger) => {
 	}
 
 	logger.info(`Inject context mode: ${injectGitHubContext}`);
+
+	const dryRun = getBooleanInput('dry-run', { required: true });
+
 	logger.endGroup();
 
 	return {
@@ -74,7 +77,8 @@ const getInputs = async(logger) => {
 		awsSecretAccessKey,
 		awsSessionToken,
 		reportPath,
-		injectGitHubContext
+		injectGitHubContext,
+		dryRun
 	};
 };
 

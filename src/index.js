@@ -9,7 +9,17 @@ import { finalize, submit } from './report.js';
 		const inputs = await getInputs(logger);
 		const report = await finalize(logger, context, inputs);
 
-		await submit(logger, context, inputs, report);
+		const { dryRun } = inputs;
+
+		if (dryRun) {
+			logger.startGroup('Print report');
+			logger.info(`\n${JSON.stringify(report, null, 2)}`);
+			logger.endGroup();
+
+			return;
+		} else {
+			await submit(logger, context, inputs, report);
+		}
 	} catch (err) {
 		setFailed(err.message);
 

@@ -25,6 +25,10 @@ inputs:
     description: Change injection of GitHub Actions context at report submission time
     required: true
     default: auto
+  dry-run:
+    description: Run action in dry run mode
+    required: true
+    default: false
 runs:
   using: node20
   main: dist/index.js
