@@ -66,7 +66,7 @@ const getInputs = async(logger) => {
 		throw new Error('Inject context mode invalid');
 	}
 
-	logger.info(`Inject context mode '${injectGitHubContext}' invalid`);
+	logger.info(`Inject context mode: ${injectGitHubContext}`);
 	logger.endGroup();
 
 	return {
