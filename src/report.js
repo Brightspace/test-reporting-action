@@ -88,7 +88,7 @@ const fullReportSchema = {
 					tool: { type: 'string', pattern: nonEmptyStringPattern },
 					experience: { type: 'string', pattern: nonEmptyStringPattern },
 					type: { type: 'string', pattern: nonEmptyStringPattern },
-					browser: { type: 'string', enum: ['chromium', 'firefox ', 'webkit'] },
+					browser: { type: 'string', enum: ['chromium', 'firefox', 'webkit'] },
 					retries: { type: 'integer', minimum: 0 }
 				},
 				required: [
