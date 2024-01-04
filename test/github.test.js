@@ -162,7 +162,8 @@ describe('github', () => {
 				'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
 				'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
 				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
-				'INPUT_INJECT-GITHUB-CONTEXT': 'auto'
+				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+				'INPUT_DRY-RUN': 'true'
 			});
 
 			const inputs = await getInputs(logger);
@@ -183,7 +184,8 @@ describe('github', () => {
 					'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
 					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
 					'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
-					'INPUT_INJECT-GITHUB-CONTEXT': 'auto'
+					'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+					'INPUT_DRY-RUN': 'true'
 				});
 
 				try {
@@ -205,7 +207,8 @@ describe('github', () => {
 					'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
 					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
 					'INPUT_REPORT-PATH': 'not a file',
-					'INPUT_INJECT-GITHUB-CONTEXT': 'auto'
+					'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+					'INPUT_DRY-RUN': 'true'
 				});
 
 				try {
@@ -214,6 +217,30 @@ describe('github', () => {
 					await getInputs(logger);
 				} catch (err) {
 					expect(err.message).to.eq('Report path must exists');
+
+					return;
+				}
+
+				throw new Error('failed');
+			});
+
+			it('invalid injection mode', async() => {
+				sandbox.stub(fs, 'access');
+				sandbox.stub(process, 'env').value({
+					'INPUT_AWS-ACCESS-KEY-ID': 'aws-access-key-id',
+					'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
+					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
+					'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
+					'INPUT_INJECT-GITHUB-CONTEXT': 'bad',
+					'INPUT_DRY-RUN': 'true'
+				});
+
+				try {
+					const logger = makeDummyLogger();
+
+					await getInputs(logger);
+				} catch (err) {
+					expect(err.message).to.eq('Inject context mode invalid');
 
 					return;
 				}

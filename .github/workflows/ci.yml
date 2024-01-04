@@ -104,6 +104,13 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npm run test:all
+      - name: Upload report (dry run)
+        uses: ./
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+          dry-run: true
       - name: Upload report
         uses: ./
         with:
