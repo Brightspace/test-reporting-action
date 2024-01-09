@@ -28,7 +28,7 @@
   "devDependencies": {
     "@vercel/ncc": "^0.38",
     "aws-sdk-client-mock": "^3",
-    "c8": "^8",
+    "c8": "^9",
     "chai": "^5",
     "d2l-license-checker": "^4",
     "d2l-test-reporting": "^0.0.10",
