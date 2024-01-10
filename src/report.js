@@ -197,7 +197,10 @@ const makeDetailRecords = (report) => {
 			totalDuration,
 			status,
 			duration,
-			browser
+			browser,
+			type,
+			experience,
+			tool
 		} = detail;
 
 		const dimensions = [
@@ -207,6 +210,18 @@ const makeDetailRecords = (report) => {
 
 		if (browser) {
 			dimensions.push({ Name: 'browser', Value: browser });
+		}
+
+		if (type) {
+			dimensions.push({ Name: 'type', Value: type });
+		}
+
+		if (experience) {
+			dimensions.push({ Name: 'experience', Value: experience });
+		}
+
+		if (tool) {
+			dimensions.push({ Name: 'tool', Value: tool });
 		}
 
 		return {
