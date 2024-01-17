@@ -20,8 +20,8 @@ import { finalize, submit } from './report.js';
 		} else {
 			await submit(logger, context, inputs, report);
 		}
-	} catch (err) {
-		setFailed(err.message);
+	} catch ({ message }) {
+		setFailed(message);
 
 		logger.endGroup();
 	}

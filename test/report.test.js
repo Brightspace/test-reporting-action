@@ -165,8 +165,8 @@ describe('report', () => {
 
 				try {
 					await finalize(logger, testContext, testInputs);
-				} catch (err) {
-					expect(err.message).to.contain('Report is not valid');
+				} catch ({ message }) {
+					expect(message).to.contain('Report is not valid');
 
 					return;
 				}
@@ -179,8 +179,8 @@ describe('report', () => {
 
 				try {
 					await finalize(logger, testContext, testInputs);
-				} catch (err) {
-					expect(err.message).to.contain('Report is not valid');
+				} catch ({ message }) {
+					expect(message).to.contain('Report is not valid');
 
 					return;
 				}
@@ -193,8 +193,8 @@ describe('report', () => {
 
 				try {
 					await finalize(logger, testContext, testInputs);
-				} catch (err) {
-					expect(err.message).to.contain('Report does not conform to needed schema');
+				} catch ({ message }) {
+					expect(message).to.contain('Report does not conform to schema');
 
 					return;
 				}
@@ -231,8 +231,8 @@ describe('report', () => {
 
 				try {
 					await submit(logger, testContext, testInputs, testReportFull);
-				} catch (err) {
-					expect(err.message).to.eq('Unable to assume required role');
+				} catch ({ message }) {
+					expect(message).to.eq('Unable to assume required role');
 
 					return;
 				}
@@ -248,8 +248,8 @@ describe('report', () => {
 
 				try {
 					await submit(logger, testContext, testInputs, testReportFull);
-				} catch (err) {
-					expect(err.message).to.eq('Unable to submit summary record');
+				} catch ({ message }) {
+					expect(message).to.eq('Unable to submit summary record');
 
 					return;
 				}
@@ -266,8 +266,8 @@ describe('report', () => {
 
 				try {
 					await submit(logger, testContext, testInputs, testReportFull);
-				} catch (err) {
-					expect(err.message).to.eq('Unable to submit detail records');
+				} catch ({ message }) {
+					expect(message).to.eq('Unable to submit detail records');
 
 					return;
 				}

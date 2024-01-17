@@ -53,7 +53,7 @@ const getInputs = async(logger) => {
 
 	try {
 		await fs.access(reportPath);
-	} catch (err) {
+	} catch {
 		throw new Error('Report path must exists');
 	}
 
