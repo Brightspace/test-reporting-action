@@ -9,7 +9,7 @@ const ajv = new Ajv({ verbose: true });
 addFormats(ajv, ['date-time', 'uri', 'uuid']);
 
 const gitHubPattern = '[A-Za-z0-9_.-]+';
-const nonEmptyStringPattern = '^[^\\s].+[^\\s]$';
+const nonEmptyStringPattern = '^[^\\s].*[^\\s]$';
 const githubContextItems = {
 	githubOrganization: { type: 'string', pattern: gitHubPattern },
 	githubRepository: { type: 'string', pattern: gitHubPattern },
