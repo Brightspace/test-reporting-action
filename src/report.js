@@ -294,8 +294,7 @@ const finalize = async(logger, context, inputs) => {
 	const { summary } = report;
 
 	if (injectGitHubContext === 'force') {
-		logger.warning('GitHub context missing or incomplete');
-		logger.info('Inject missing GitHub context');
+		logger.info('Inject GitHub context');
 
 		report.summary = {
 			...summary,
@@ -321,7 +320,7 @@ const finalize = async(logger, context, inputs) => {
 		const { errors } = validateFullReport;
 		const message = ajv.errorsText(errors, { dataVar: 'report' });
 
-		throw new Error(`Report does not conform to needed schema: ${message}`);
+		throw new Error(`Report does not conform to schema: ${message}`);
 	}
 
 	logger.endGroup();
