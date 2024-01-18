@@ -194,15 +194,17 @@ const finalize = async(logger, context, inputs) => {
 			validateContext(summary);
 		} catch {
 			if (injectGitHubContext === 'auto') {
-				logger.warning('GitHub context missing or incomplete');
-				logger.info('Inject missing GitHub context');
+				logger.warning('GitHub context missing, incomplete or invalid');
+				logger.info('Inject GitHub context');
 
 				report.summary = {
 					...summary,
 					...context
 				};
 			} else if (injectGitHubContext === 'off') {
-				throw new Error('GitHub context missing or incomplete');
+				throw new Error('GitHub context missing, incomplete or invalid');
+			} else {
+				throw new Error('Unknown GitHub context injection mode');
 			}
 		}
 	}
