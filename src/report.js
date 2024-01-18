@@ -1,124 +1,13 @@
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { MeasureValueType, TimestreamWriteClient, TimeUnit, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
 import fs from 'fs/promises';
+import { validateContext } from 'd2l-test-reporting/helpers/github.js';
+import { validateReport } from 'd2l-test-reporting/helpers/report.js';
 
-const ajv = new Ajv({ verbose: true });
-
-addFormats(ajv, ['date-time', 'uri', 'uuid']);
-
-const gitHubPattern = '[A-Za-z0-9_.-]+';
-const nonEmptyStringPattern = '^[^\\s].*[^\\s]$';
-const githubContextItems = {
-	githubOrganization: { type: 'string', pattern: gitHubPattern },
-	githubRepository: { type: 'string', pattern: gitHubPattern },
-	githubWorkflow: { type: 'string', pattern: nonEmptyStringPattern },
-	githubRunId: { type: 'integer', minimum: 0 },
-	githubRunAttempt: { type: 'integer', minimum: 1 },
-	gitBranch: { type: 'string', pattern: nonEmptyStringPattern },
-	gitSha: { type: 'string', pattern: '([A-Fa-f0-9]{40})' }
-};
-const githubContextSchema = {
-	type: 'object',
-	properties: githubContextItems,
-	required: [
-		'githubOrganization',
-		'githubRepository',
-		'githubWorkflow',
-		'githubRunId',
-		'githubRunAttempt',
-		'gitBranch',
-		'gitSha'
-	],
-	additionalProperties: true
-};
-const fullReportSchema = {
-	type: 'object',
-	properties: {
-		reportId: { type: 'string', format: 'uuid' },
-		reportVersion: { type: 'integer', const: 1 },
-		summary: {
-			type: 'object',
-			properties: {
-				...githubContextItems,
-				lmsBuild: { type: 'string', pattern: '([0-9]{2}\\.){3}[0-9]{5}' },
-				lmsInstance: { type: 'string', format: 'uri' },
-				operatingSystem: { type: 'string', enum: ['windows', 'linux', 'mac'] },
-				framework: { type: 'string', pattern: nonEmptyStringPattern },
-				started: { type: 'string', format: 'date-time' },
-				totalDuration: { type: 'integer', minimum: 0 },
-				status: { type: 'string', enum: ['passed', 'failed'] },
-				countPassed: { type: 'integer', minimum: 0 },
-				countFailed: { type: 'integer', minimum: 0 },
-				countSkipped: { type: 'integer', minimum: 0 },
-				countFlaky: { type: 'integer', minimum: 0 }
-			},
-			required: [
-				'githubOrganization',
-				'githubRepository',
-				'githubWorkflow',
-				'githubRunId',
-				'githubRunAttempt',
-				'gitBranch',
-				'gitSha',
-				'operatingSystem',
-				'framework',
-				'started',
-				'totalDuration',
-				'status',
-				'countPassed',
-				'countFailed',
-				'countSkipped',
-				'countFlaky'
-			],
-			additionalProperties: false
-		},
-		details: {
-			type: 'array',
-			items: {
-				type: 'object',
-				properties: {
-					name: { type: 'string', pattern: nonEmptyStringPattern },
-					location: { type: 'string', pattern: nonEmptyStringPattern },
-					started: { type: 'string', format: 'date-time' },
-					duration: { type: 'integer', minimum: 0 },
-					totalDuration: { type: 'integer', minimum: 0 },
-					status: { type: 'string', enum: ['passed', 'failed', 'skipped'] },
-					tool: { type: 'string', pattern: nonEmptyStringPattern },
-					experience: { type: 'string', pattern: nonEmptyStringPattern },
-					type: { type: 'string', pattern: nonEmptyStringPattern },
-					browser: { type: 'string', enum: ['chromium', 'firefox', 'webkit'] },
-					retries: { type: 'integer', minimum: 0 }
-				},
-				required: [
-					'name',
-					'location',
-					'started',
-					'duration',
-					'totalDuration',
-					'status',
-					'retries'
-				],
-				additionalProperties: false
-			}
-		}
-	},
-	required: [
-		'reportId',
-		'reportVersion',
-		'summary',
-		'details'
-	],
-	additionalProperties: false
-};
 const region = 'us-east-1';
 const databaseName = 'test_reporting';
 const { BIGINT, VARCHAR, MULTI } = MeasureValueType;
 const { MILLISECONDS } = TimeUnit;
-
-const validateFullReport = ajv.compile(fullReportSchema);
-const validateGitHubContext = ajv.compile(githubContextSchema);
 
 const makeSummaryRecord = (report) => {
 	const { reportId, summary } = report;
@@ -300,28 +189,27 @@ const finalize = async(logger, context, inputs) => {
 			...summary,
 			...context
 		};
-	} else if (!validateGitHubContext(summary)) {
-		if (injectGitHubContext === 'auto') {
-			logger.warning('GitHub context missing or incomplete');
-			logger.info('Inject missing GitHub context');
+	} else {
+		try {
+			validateContext(summary);
+		} catch {
+			if (injectGitHubContext === 'auto') {
+				logger.warning('GitHub context missing or incomplete');
+				logger.info('Inject missing GitHub context');
 
-			report.summary = {
-				...summary,
-				...context
-			};
-		} else if (injectGitHubContext === 'off') {
-			throw new Error('GitHub context missing or incomplete');
+				report.summary = {
+					...summary,
+					...context
+				};
+			} else if (injectGitHubContext === 'off') {
+				throw new Error('GitHub context missing or incomplete');
+			}
 		}
 	}
 
 	logger.info('Validate schema');
 
-	if (!validateFullReport(report)) {
-		const { errors } = validateFullReport;
-		const message = ajv.errorsText(errors, { dataVar: 'report' });
-
-		throw new Error(`Report does not conform to schema: ${message}`);
-	}
+	validateReport(report);
 
 	logger.endGroup();
 
