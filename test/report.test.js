@@ -19,7 +19,8 @@ const testInputs = {
 	awsAccessKeyId: 'test-access-key-id',
 	awsSecretAccessKey: 'test-secret-access-key',
 	awsSessionToken: 'test-session-token',
-	injectGitHubContext: 'auto'
+	injectGitHubContext: 'auto',
+	dryRun: false
 };
 const testReportMinimal = {
 	reportId: '00000000-0000-0000-0000-000000000000',
@@ -218,11 +219,28 @@ describe('report', () => {
 			timestreamWriteClientMock.reset();
 		});
 
-		it('succeeds', async() => {
+		it('full', async() => {
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
 
 			await submit(logger, testContext, testInputs, testReportFull);
+
+			expect(stsClientMock.calls().length).to.eq(1);
+			expect(timestreamWriteClientMock.calls().length).to.eq(2);
+		});
+
+		it('dry run', async() => {
+			const dryRunInputs = {
+				...testInputs,
+				dryRun: true
+			};
+
+			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+
+			await submit(logger, testContext, dryRunInputs, testReportFull);
+
+			expect(stsClientMock.calls().length).to.eq(1);
+			expect(timestreamWriteClientMock.calls().length).to.eq(0);
 		});
 
 		describe('fails', () => {
@@ -233,6 +251,8 @@ describe('report', () => {
 					await submit(logger, testContext, testInputs, testReportFull);
 				} catch ({ message }) {
 					expect(message).to.eq('Unable to assume required role');
+					expect(stsClientMock.calls().length).to.eq(1);
+					expect(timestreamWriteClientMock.calls().length).to.eq(0);
 
 					return;
 				}
@@ -250,6 +270,8 @@ describe('report', () => {
 					await submit(logger, testContext, testInputs, testReportFull);
 				} catch ({ message }) {
 					expect(message).to.eq('Unable to submit summary record');
+					expect(stsClientMock.calls().length).to.eq(1);
+					expect(timestreamWriteClientMock.calls().length).to.eq(1);
 
 					return;
 				}
@@ -268,6 +290,8 @@ describe('report', () => {
 					await submit(logger, testContext, testInputs, testReportFull);
 				} catch ({ message }) {
 					expect(message).to.eq('Unable to submit detail records');
+					expect(stsClientMock.calls().length).to.eq(1);
+					expect(timestreamWriteClientMock.calls().length).to.eq(2);
 
 					return;
 				}
