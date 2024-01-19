@@ -213,6 +213,9 @@ const finalize = async(logger, context, inputs) => {
 
 	validateReport(report);
 
+	const { reportId } = report;
+
+	logger.info(`Report ID: ${reportId}`);
 	logger.endGroup();
 
 	return report;
@@ -233,7 +236,7 @@ const submit = async(logger, context, inputs, report) => {
 	let credentials;
 
 	try {
-		const { githubOrganization: org, githubRepository: repo } = context;
+		const { githubOrganization, githubRepository } = context;
 		const {
 			awsAccessKeyId: accessKeyId,
 			awsSecretAccessKey: secretAccessKey,
@@ -247,12 +250,20 @@ const submit = async(logger, context, inputs, report) => {
 			`test-reporting-${(new Date()).getTime()}`,
 			3600, // 1 hour
 			[
-				{ Key: 'Org', Value: org },
-				{ Key: 'Repo', Value: repo }
+				{ Key: 'Org', Value: githubOrganization },
+				{ Key: 'Repo', Value: githubRepository }
 			]
 		);
 	} catch {
 		throw new Error('Unable to assume required role');
+	}
+
+	const { dryRun } = inputs;
+
+	if (dryRun) {
+		logger.info('Dry run, skipping records submit');
+
+		return;
 	}
 
 	logger.info('Submit summary record');

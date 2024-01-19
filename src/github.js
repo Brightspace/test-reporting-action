@@ -70,6 +70,7 @@ const getInputs = async(logger) => {
 
 	const dryRun = getBooleanInput('dry-run', { required: true });
 
+	logger.info(`Dry run: ${dryRun}`);
 	logger.endGroup();
 
 	return {
