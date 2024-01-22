@@ -103,7 +103,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Run tests
-        run: npm run test:all
+        run: npm run test:unit
       - name: Upload report (dry run)
         uses: ./
         if: ${{github.triggering_actor != 'dependabot[bot]'}}

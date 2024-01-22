@@ -12,8 +12,8 @@
     "lint:eslint": "eslint . --ext .js,.cjs",
     "fix": "npm run fix:eslint",
     "fix:eslint": "npm run lint:eslint -- --fix",
-    "test": "npm run lint && npm run test:all",
-    "test:all": "c8 mocha"
+    "test": "npm run lint && npm run test:unit",
+    "test:unit": "c8 mocha"
   },
   "engines": {
     "node": ">=20"
