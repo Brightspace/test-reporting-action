@@ -16,7 +16,7 @@ and querying infrastructure.
     aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
     aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
     aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
-    report-path: ./d2l-test-report.json # optional, defaults to show path
+    report-path: ./d2l-test-report.json # optional, defaults to shown path
     inject-github-context: auto # optional, defaults to 'auto'
     dry-run: false # optional, only needed for testing & debugging
 ```
