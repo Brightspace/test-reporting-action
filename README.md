@@ -61,7 +61,7 @@ npm run lint
 npm run lint:eslint
 ```
 
-### Formatting
+### Fixing
 
 ```console
 # currently only eslint
