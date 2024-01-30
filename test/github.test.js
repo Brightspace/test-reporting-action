@@ -137,17 +137,10 @@ describe('github', () => {
 			it('not in github actions', () => {
 				sandbox.stub(process, 'env').value({});
 
-				try {
-					const logger = makeDummyLogger();
+				const logger = makeDummyLogger();
+				const wrapper = () => getContext(logger);
 
-					getContext(logger);
-				} catch ({ message }) {
-					expect(message).to.eq('Unable to gather GitHub context');
-
-					return;
-				}
-
-				throw new Error('failed');
+				expect(wrapper).to.throw('Unable to gather GitHub context');
 			});
 		});
 	});
