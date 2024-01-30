@@ -30,7 +30,7 @@ data to the framework.
 ...
 ```
 
-> [!NOTE]
+> [!IMPORTANT]
 > This action assumes a report, conforming to the D2L report schema, has
 > already been generated using a given test framework reporter or manually.
 
