@@ -251,7 +251,7 @@ describe('report', () => {
 				try {
 					await submit(logger, testContext, testInputs, testReportFull);
 				} catch ({ message }) {
-					expect(message).to.eq('Unable to assume required role');
+					expect(message).to.contain('Unable to assume required role');
 					expect(stsClientMock.calls().length).to.eq(1);
 					expect(timestreamWriteClientMock.calls().length).to.eq(0);
 
@@ -270,7 +270,7 @@ describe('report', () => {
 				try {
 					await submit(logger, testContext, testInputs, testReportFull);
 				} catch ({ message }) {
-					expect(message).to.eq('Unable to submit summary record');
+					expect(message).to.contain('Unable to submit summary record');
 					expect(stsClientMock.calls().length).to.eq(1);
 					expect(timestreamWriteClientMock.calls().length).to.eq(1);
 
@@ -290,7 +290,7 @@ describe('report', () => {
 				try {
 					await submit(logger, testContext, testInputs, testReportFull);
 				} catch ({ message }) {
-					expect(message).to.eq('Unable to submit detail records');
+					expect(message).to.contain('Unable to submit detail records');
 					expect(stsClientMock.calls().length).to.eq(1);
 					expect(timestreamWriteClientMock.calls().length).to.eq(2);
 

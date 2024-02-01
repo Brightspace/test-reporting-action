@@ -275,8 +275,8 @@ const submit = async(logger, context, inputs, report) => {
 				{ Key: 'Repo', Value: githubRepository }
 			]
 		);
-	} catch {
-		throw new Error('Unable to assume required role');
+	} catch ({ message }) {
+		throw new Error(`Unable to assume required role: ${message}`);
 	}
 
 	const { dryRun } = inputs;
@@ -291,16 +291,16 @@ const submit = async(logger, context, inputs, report) => {
 
 	try {
 		await writeTimestreamRecords(region, credentials, summaryRecord);
-	} catch {
-		throw new Error('Unable to submit summary record');
+	} catch ({ message }) {
+		throw new Error(`Unable to submit summary record: ${message}`);
 	}
 
 	logger.info('Submit detail records');
 
 	try {
 		await writeTimestreamRecords(region, credentials, detailRecords);
-	} catch {
-		throw new Error('Unable to submit detail records');
+	} catch ({ message }) {
+		throw new Error(`Unable to submit detail records: ${message}`);
 	}
 
 	logger.endGroup();
