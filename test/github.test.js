@@ -156,7 +156,8 @@ describe('github', () => {
 				'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
 				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
-				'INPUT_DRY-RUN': 'true'
+				'INPUT_DRY-RUN': 'true',
+				'INPUT_DEBUG': 'true'
 			});
 
 			const inputs = await getInputs(logger);
@@ -178,7 +179,8 @@ describe('github', () => {
 					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
 					'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 					'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
-					'INPUT_DRY-RUN': 'true'
+					'INPUT_DRY-RUN': 'true',
+					'INPUT_DEBUG': 'true'
 				});
 
 				try {
@@ -201,7 +203,8 @@ describe('github', () => {
 					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
 					'INPUT_REPORT-PATH': 'not a file',
 					'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
-					'INPUT_DRY-RUN': 'true'
+					'INPUT_DRY-RUN': 'true',
+					'INPUT_DEBUG': 'true'
 				});
 
 				try {
@@ -225,7 +228,8 @@ describe('github', () => {
 					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
 					'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 					'INPUT_INJECT-GITHUB-CONTEXT': 'bad',
-					'INPUT_DRY-RUN': 'true'
+					'INPUT_DRY-RUN': 'true',
+					'INPUT_DEBUG': 'true'
 				});
 
 				try {
