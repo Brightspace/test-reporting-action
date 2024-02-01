@@ -27,12 +27,36 @@ data to the framework.
     report-path: ./d2l-test-report.json # optional, defaults to shown path
     inject-github-context: auto # optional, defaults to 'auto'
     dry-run: false # optional, only needed for testing & debugging
+    debug: false # optional, only needed for testing & debugging
 ...
 ```
 
 > [!IMPORTANT]
 > This action assumes a report, conforming to the D2L report schema, has
-> already been generated using a given test framework reporter or manually.
+> already been generated using a given test framework reporter or manually. For
+> available reporters please see [node reporters].
+
+### Inputs
+
+* `aws-access-key-id`: Specifies an AWS access key associated with an IAM
+  account. **Required**
+* `aws-secret-access-key`: Specifies the secret key associated with the access
+  key. This is essentially the "password" for the access key. **Required**
+* `aws-access-key-id`: Specifies an AWS access key associated with an IAM
+  account. **Required**
+* `report-path`: Path to report D2L format test report JSON file. **Optional**.
+  Defaults to `./d2l-test-report.json`
+* `inject-github-context`: Change mode for injection of GitHub Actions context
+  at report submission time. **Optional**. Defaults to `auto`
+  * `auto`: Injects GitHub Actions context into report if missing
+  * `force`: Injects GitHub Actions context into report always
+  * `off`: Will not inject GitHub Actions context into report even if missing,
+    can result in validation failure if not present
+* `dry-run`: Enable or disable dry run mode. Will perform all operations except
+  final submission of report data to backend. **Optional**. Defaults to `false`
+* `debug`: Enable or disable debug mode. Will enable additional log messages.
+  Does not stop final submission of report data to backend. **Optional**.
+  Defaults to `false`
 
 ## Developing
 
@@ -83,3 +107,4 @@ npm run test:unit
 
 <!-- links -->
 [repo-settings]: https://github.com/Brightspace/repo-settings/blob/-/docs/test-reporting.md
+[node reporters]: https://github.com/Brightspace/test-reporting-node?tab=readme-ov-file#reporters
