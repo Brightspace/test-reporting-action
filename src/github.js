@@ -71,6 +71,10 @@ const getInputs = async(logger) => {
 	const dryRun = getBooleanInput('dry-run', { required: true });
 
 	logger.info(`Dry run: ${dryRun}`);
+
+	const debug = getBooleanInput('debug', { required: true });
+
+	logger.info(`Debug: ${debug}`);
 	logger.endGroup();
 
 	return {
@@ -79,7 +83,8 @@ const getInputs = async(logger) => {
 		awsSessionToken,
 		reportPath,
 		injectGitHubContext,
-		dryRun
+		dryRun,
+		debug
 	};
 };
 

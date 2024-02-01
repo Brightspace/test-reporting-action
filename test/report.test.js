@@ -20,7 +20,8 @@ const testInputs = {
 	awsSecretAccessKey: 'test-secret-access-key',
 	awsSessionToken: 'test-session-token',
 	injectGitHubContext: 'auto',
-	dryRun: false
+	dryRun: false,
+	debug: true
 };
 const testReportMinimal = {
 	reportId: '00000000-0000-0000-0000-000000000000',
