@@ -9,7 +9,7 @@ const databaseName = 'test_reporting';
 const { BIGINT, VARCHAR, MULTI } = MeasureValueType;
 const { MILLISECONDS } = TimeUnit;
 
-const makeSummaryRecord = (report) => {
+const makeSummaryWriteRequest = (report) => {
 	const { reportId, summary } = report;
 	const {
 		githubOrganization,
@@ -75,70 +75,82 @@ const makeSummaryRecord = (report) => {
 	};
 };
 
-const makeDetailRecords = (report) => {
-	const { reportId, details } = report;
-	const records = details.map(detail => {
-		const {
-			name,
-			started,
-			location,
-			retries,
-			totalDuration,
-			status,
-			duration,
-			browser,
-			type,
-			experience,
-			tool
-		} = detail;
+const makeDetailRecord = (detail) => {
+	const {
+		name,
+		started,
+		location,
+		retries,
+		totalDuration,
+		status,
+		duration,
+		browser,
+		type,
+		experience,
+		tool
+	} = detail;
 
-		const dimensions = [
-			{ Name: 'name', Value: name },
-			{ Name: 'location', Value: location }
-		];
+	const dimensions = [
+		{ Name: 'name', Value: name },
+		{ Name: 'location', Value: location }
+	];
 
-		if (browser) {
-			dimensions.push({ Name: 'browser', Value: browser });
-		}
+	if (browser) {
+		dimensions.push({ Name: 'browser', Value: browser });
+	}
 
-		if (type) {
-			dimensions.push({ Name: 'type', Value: type });
-		}
+	if (type) {
+		dimensions.push({ Name: 'type', Value: type });
+	}
 
-		if (experience) {
-			dimensions.push({ Name: 'experience', Value: experience });
-		}
+	if (experience) {
+		dimensions.push({ Name: 'experience', Value: experience });
+	}
 
-		if (tool) {
-			dimensions.push({ Name: 'tool', Value: tool });
-		}
-
-		return {
-			Time: `${Date.parse(started)}`,
-			TimeUnit: MILLISECONDS,
-			MeasureValues: [
-				{ Name: 'duration', Value: `${duration}`, Type: BIGINT },
-				{ Name: 'total_duration', Value: `${totalDuration}`, Type: BIGINT },
-				{ Name: 'retries', Value: `${retries}`, Type: BIGINT },
-				{ Name: 'status', Value: status, Type: VARCHAR }
-			],
-			Dimensions: dimensions
-		};
-	});
+	if (tool) {
+		dimensions.push({ Name: 'tool', Value: tool });
+	}
 
 	return {
-		DatabaseName: databaseName,
-		TableName: 'details',
-		Records: records,
-		CommonAttributes: {
-			Version: 1,
-			MeasureName: 'single_test_run',
-			MeasureValueType: MULTI,
-			Dimensions: [
-				{ Name: 'report_id', Value: reportId, Type: VARCHAR }
-			]
-		}
+		Time: `${Date.parse(started)}`,
+		TimeUnit: MILLISECONDS,
+		MeasureValues: [
+			{ Name: 'duration', Value: `${duration}`, Type: BIGINT },
+			{ Name: 'total_duration', Value: `${totalDuration}`, Type: BIGINT },
+			{ Name: 'retries', Value: `${retries}`, Type: BIGINT },
+			{ Name: 'status', Value: status, Type: VARCHAR }
+		],
+		Dimensions: dimensions
 	};
+};
+
+const makeDetailWriteRequests = (report) => {
+	const { reportId, details } = report;
+	const batchSize = 100;
+	const writeRequests = Array.from(
+		{ length: Math.ceil(details.length / batchSize) },
+		(v, i) => {
+			const detailRecordBatch = details
+				.slice(i * batchSize, i * batchSize + batchSize)
+				.map(makeDetailRecord);
+
+			return {
+				DatabaseName: databaseName,
+				TableName: 'details',
+				Records: detailRecordBatch,
+				CommonAttributes: {
+					Version: 1,
+					MeasureName: 'single_test_run',
+					MeasureValueType: MULTI,
+					Dimensions: [
+						{ Name: 'report_id', Value: reportId, Type: VARCHAR }
+					]
+				}
+			};
+		}
+	);
+
+	return writeRequests;
 };
 
 const assumeRole = async(region, credentials, arn, sessionName, duration, tags) => {
@@ -159,11 +171,14 @@ const assumeRole = async(region, credentials, arn, sessionName, duration, tags) 
 	};
 };
 
-const writeTimestreamRecords = async(region, credentials, input) => {
+const writeTimestream = async(region, credentials, requests) => {
 	const client = new TimestreamWriteClient({ credentials, region });
-	const command = new WriteRecordsCommand(input);
 
-	await client.send(command);
+	for (const request of requests) {
+		const command = new WriteRecordsCommand(request);
+
+		await client.send(command);
+	}
 };
 
 const finalize = async(logger, context, inputs) => {
@@ -233,24 +248,31 @@ const finalize = async(logger, context, inputs) => {
 
 const submit = async(logger, context, inputs, report) => {
 	logger.startGroup('Submit report');
-	logger.info('Generate summary record');
+	logger.info('Generate summary write request');
 
 	const { debug } = inputs;
-	const summaryRecord = makeSummaryRecord(report);
+	const summaryWriteRequest = makeSummaryWriteRequest(report);
 
 	if (debug) {
-		logger.info('Generated summary record\n');
-		logger.info(`${JSON.stringify(summaryRecord, null, 2)}\n`);
+		logger.info('Generated summary write request\n');
+		logger.info(`${JSON.stringify(summaryWriteRequest, null, 2)}\n`);
 	}
 
-	logger.info('Generate detail records');
+	logger.info('Generate detail write requests');
 
-	const detailRecords = makeDetailRecords(report);
+	const detailWriteRequests = makeDetailWriteRequests(report);
 
 	if (debug) {
-		logger.info('Generated detail records\n');
-		logger.info(`${JSON.stringify(detailRecords, null, 2)}\n`);
+		logger.info('Generated detail write requests\n');
+		logger.info(`${JSON.stringify(detailWriteRequests, null, 2)}\n`);
 	}
+
+	logger.info('Merge write requests');
+
+	const writeRequests = [
+		summaryWriteRequest,
+		...detailWriteRequests
+	];
 
 	logger.info('Assume required role');
 
@@ -287,20 +309,12 @@ const submit = async(logger, context, inputs, report) => {
 		return;
 	}
 
-	logger.info('Submit summary record');
+	logger.info('Executing write requests');
 
 	try {
-		await writeTimestreamRecords(region, credentials, summaryRecord);
+		await writeTimestream(region, credentials, writeRequests);
 	} catch ({ message }) {
-		throw new Error(`Unable to submit summary record: ${message}`);
-	}
-
-	logger.info('Submit detail records');
-
-	try {
-		await writeTimestreamRecords(region, credentials, detailRecords);
-	} catch ({ message }) {
-		throw new Error(`Unable to submit detail records: ${message}`);
+		throw new Error(`Unable to submit write requests: ${message}`);
 	}
 
 	logger.endGroup();

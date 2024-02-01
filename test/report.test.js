@@ -244,6 +244,21 @@ describe('report', () => {
 			expect(timestreamWriteClientMock.calls().length).to.eq(0);
 		});
 
+		it('debug', async() => {
+			const debugInputs = {
+				...testInputs,
+				debug: true
+			};
+
+			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+
+			await submit(logger, testContext, debugInputs, testReportFull);
+
+			expect(stsClientMock.calls().length).to.eq(1);
+			expect(timestreamWriteClientMock.calls().length).to.eq(2);
+		});
+
 		describe('fails', () => {
 			it('invalid credentials', async() => {
 				stsClientMock.on(AssumeRoleCommand).rejects(new Error('failed'));
@@ -261,7 +276,7 @@ describe('report', () => {
 				throw new Error('failed');
 			});
 
-			it('submitting summary', async() => {
+			it('sending write requests', async() => {
 				stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 				timestreamWriteClientMock
 					.on(WriteRecordsCommand)
@@ -270,29 +285,9 @@ describe('report', () => {
 				try {
 					await submit(logger, testContext, testInputs, testReportFull);
 				} catch ({ message }) {
-					expect(message).to.contain('Unable to submit summary record');
+					expect(message).to.contain('Unable to submit write requests');
 					expect(stsClientMock.calls().length).to.eq(1);
 					expect(timestreamWriteClientMock.calls().length).to.eq(1);
-
-					return;
-				}
-
-				throw new Error('failed');
-			});
-
-			it('submitting details', async() => {
-				stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
-				timestreamWriteClientMock
-					.on(WriteRecordsCommand)
-					.resolvesOnce()
-					.rejectsOnce();
-
-				try {
-					await submit(logger, testContext, testInputs, testReportFull);
-				} catch ({ message }) {
-					expect(message).to.contain('Unable to submit detail records');
-					expect(stsClientMock.calls().length).to.eq(1);
-					expect(timestreamWriteClientMock.calls().length).to.eq(2);
 
 					return;
 				}
