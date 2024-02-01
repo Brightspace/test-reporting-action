@@ -169,7 +169,7 @@ const writeTimestreamRecords = async(region, credentials, input) => {
 const finalize = async(logger, context, inputs) => {
 	logger.startGroup('Finalize test report');
 
-	const { reportPath, injectGitHubContext } = inputs;
+	const { reportPath, injectGitHubContext, debug } = inputs;
 	let report;
 
 	try {
@@ -178,6 +178,12 @@ const finalize = async(logger, context, inputs) => {
 		report = JSON.parse(reportRaw);
 	} catch {
 		throw new Error('Report is not valid');
+	}
+
+	if (debug) {
+		logger.startGroup('Loaded report');
+		logger.info(JSON.stringify(report, null, 2));
+		logger.endGroup();
 	}
 
 	const { summary } = report;
@@ -209,6 +215,12 @@ const finalize = async(logger, context, inputs) => {
 		}
 	}
 
+	if (debug) {
+		logger.startGroup('Finalized report');
+		logger.info(JSON.stringify(report, null, 2));
+		logger.endGroup();
+	}
+
 	logger.info('Validate schema');
 
 	validateReport(report);
@@ -225,11 +237,24 @@ const submit = async(logger, context, inputs, report) => {
 	logger.startGroup('Submit report');
 	logger.info('Generate summary record');
 
+	const { debug } = inputs;
 	const summaryRecord = makeSummaryRecord(report);
+
+	if (debug) {
+		logger.startGroup('Generated summary record');
+		logger.info(JSON.stringify(summaryRecord, null, 2));
+		logger.endGroup();
+	}
 
 	logger.info('Generate detail records');
 
 	const detailRecords = makeDetailRecords(report);
+
+	if (debug) {
+		logger.startGroup('Generated detail records');
+		logger.info(JSON.stringify(summaryRecord, detailRecords, 2));
+		logger.endGroup();
+	}
 
 	logger.info('Assume required role');
 

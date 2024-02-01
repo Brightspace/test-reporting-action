@@ -3,16 +3,10 @@ description: Report testing data from directly in your GitHub Action runs
 author: D2L Corporation
 inputs:
   aws-access-key-id:
-    description: >-
-      AWS Access Key ID. This input is required if running in the GitHub hosted environment.
-      It is optional if running in a self-hosted environment that already has AWS credentials,
-      for example on an EC2 instance.
+    description: AWS Access Key ID. This input is required if running in the GitHub hosted environment
     required: true
   aws-secret-access-key:
-    description: >-
-      AWS Secret Access Key. This input is required if running in the GitHub hosted environment.
-      It is optional if running in a self-hosted environment that already has AWS credentials,
-      for example on an EC2 instance.
+    description: AWS Secret Access Key. This input is required if running in the GitHub hosted environment
     required: true
   aws-session-token:
     description: AWS Session Token
@@ -27,6 +21,10 @@ inputs:
     default: auto
   dry-run:
     description: Run action in dry run mode
+    required: true
+    default: false
+  debug:
+    description: Run action in debug mode. Will enable additional logging messages
     required: true
     default: false
 runs:
