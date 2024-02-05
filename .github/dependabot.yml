@@ -7,7 +7,8 @@ updates:
     groups:
       aws-clients:
         dependency-type: production
-        patterns: '@aws-sdk/*'
+        patterns:
+          - '@aws-sdk/*'
     ignore:
       # update-dependencies workflow already handles minor/patch updates
       - dependency-name: '@actions/*'
