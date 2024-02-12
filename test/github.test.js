@@ -140,7 +140,7 @@ describe('github', () => {
 				const logger = makeDummyLogger();
 				const wrapper = () => getContext(logger);
 
-				expect(wrapper).to.throw('Unable to gather GitHub context');
+				expect(wrapper).to.throw('unable to gather github context');
 			});
 		});
 	});
@@ -212,7 +212,7 @@ describe('github', () => {
 
 					await getInputs(logger);
 				} catch ({ message }) {
-					expect(message).to.eq('Report path must exists');
+					expect(message).to.eq('report path must exists');
 
 					return;
 				}
@@ -237,7 +237,7 @@ describe('github', () => {
 
 					await getInputs(logger);
 				} catch ({ message }) {
-					expect(message).to.eq('Inject context mode invalid');
+					expect(message).to.eq('inject context mode invalid');
 
 					return;
 				}

@@ -168,7 +168,7 @@ describe('report', () => {
 				try {
 					await finalize(logger, testContext, testInputs);
 				} catch ({ message }) {
-					expect(message).to.contain('Report is not valid');
+					expect(message).to.contain('report is not valid');
 
 					return;
 				}
@@ -182,7 +182,7 @@ describe('report', () => {
 				try {
 					await finalize(logger, testContext, testInputs);
 				} catch ({ message }) {
-					expect(message).to.contain('Report is not valid');
+					expect(message).to.contain('report is not valid');
 
 					return;
 				}
@@ -196,7 +196,7 @@ describe('report', () => {
 				try {
 					await finalize(logger, testContext, testInputs);
 				} catch ({ message }) {
-					expect(message).to.contain('Report does not conform to schema');
+					expect(message).to.contain('report does not conform to schema');
 
 					return;
 				}

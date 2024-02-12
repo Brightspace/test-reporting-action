@@ -10,7 +10,7 @@ const getStringInput = (name, lowerCase = false) => {
 	const input = getInput(name, { required: true });
 
 	if (input === '') {
-		throw new Error(`Input '${name}' must be a non-empty string`);
+		throw new Error(`input '${name}' must be a non-empty string`);
 	}
 
 	return lowerCase ? input.toLowerCase() : input;
@@ -24,7 +24,7 @@ const getContext = (logger) => {
 	try {
 		context = getGitHubContext();
 	} catch {
-		throw new Error('Unable to gather GitHub context');
+		throw new Error('unable to gather github context');
 	}
 
 	logger.info(`GitHub organization: ${context.githubOrganization}`);
@@ -54,7 +54,7 @@ const getInputs = async(logger) => {
 	try {
 		await fs.access(reportPath);
 	} catch {
-		throw new Error('Report path must exists');
+		throw new Error('report path must exists');
 	}
 
 	logger.info(`Report path: ${reportPath}`);
@@ -63,7 +63,7 @@ const getInputs = async(logger) => {
 	const injectGitHubContext = getStringInput('inject-github-context', true);
 
 	if (!['auto', 'force', 'off'].includes(injectGitHubContext)) {
-		throw new Error('Inject context mode invalid');
+		throw new Error('inject context mode invalid');
 	}
 
 	logger.info(`Inject context mode: ${injectGitHubContext}`);
