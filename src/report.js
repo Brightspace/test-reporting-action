@@ -192,7 +192,7 @@ const finalize = async(logger, context, inputs) => {
 
 		report = JSON.parse(reportRaw);
 	} catch {
-		throw new Error('Report is not valid');
+		throw new Error('report is not valid');
 	}
 
 	if (debug) {
