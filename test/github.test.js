@@ -146,7 +146,39 @@ describe('github', () => {
 	});
 
 	describe('get inputs', () => {
-		it('succeeds', async() => {
+		it('all parameters included', async() => {
+			const logger = makeDummyLogger();
+
+			sandbox.stub(fs, 'access');
+			sandbox.stub(process, 'env').value({
+				'INPUT_AWS-ACCESS-KEY-ID': 'aws-access-key-id',
+				'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
+				'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
+				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
+				'INPUT_LMS-BUILD-NUMBER': '20.24.1.12345',
+				'INPUT_LMS-INSTANCE-URL': 'https://cd2024112345.devlms.desire2learn.com',
+				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+				'INPUT_DRY-RUN': 'true',
+				'INPUT_DEBUG': 'true'
+			});
+
+			const inputs = await getInputs(logger);
+
+			expect(inputs.awsAccessKeyId).to.eq('aws-access-key-id');
+			expect(inputs.awsSecretAccessKey).to.eq('aws-secret-access-key');
+			expect(inputs.awsSessionToken).to.eq('aws-session-token');
+
+			const path = resolve('./test/data/d2l-test-report.json');
+
+			expect(inputs.reportPath).to.eq(path);
+			expect(inputs.lmsBuildNumber).to.eq('20.24.1.12345');
+			expect(inputs.lmsInstanceUrl).to.eq('https://cd2024112345.devlms.desire2learn.com');
+			expect(inputs.injectGitHubContext).to.eq('auto');
+			expect(inputs.dryRun).to.be.true;
+			expect(inputs.debug).to.be.true;
+		});
+
+		it('optionals not included', async() => {
 			const logger = makeDummyLogger();
 
 			sandbox.stub(fs, 'access');
@@ -169,6 +201,11 @@ describe('github', () => {
 			const path = resolve('./test/data/d2l-test-report.json');
 
 			expect(inputs.reportPath).to.eq(path);
+			expect(inputs.lmsBuildNumber).to.not.exist;
+			expect(inputs.lmsInstanceUrl).to.not.exist;
+			expect(inputs.injectGitHubContext).to.eq('auto');
+			expect(inputs.dryRun).to.be.true;
+			expect(inputs.debug).to.be.true;
 		});
 
 		describe('fails', () => {

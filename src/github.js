@@ -6,10 +6,10 @@ import { resolve } from 'path';
 
 const makeLogger = () => ({ startGroup, endGroup, info, warning, error });
 
-const getStringInput = (name, lowerCase = false) => {
-	const input = getInput(name, { required: true });
+const getStringInput = (name, { required = true, lowerCase = false } = {}) => {
+	const input = getInput(name, { required });
 
-	if (input === '') {
+	if (input === '' && required) {
 		throw new Error(`input '${name}' must be a non-empty string`);
 	}
 
@@ -58,9 +58,26 @@ const getInputs = async(logger) => {
 	}
 
 	logger.info(`Report path: ${reportPath}`);
+	logger.info('Determine LMS information');
+
+	let lmsBuildNumber = getStringInput('lms-build-number', { required: false });
+	let lmsInstanceUrl = getStringInput('lms-instance-url', { required: false });
+
+	if (lmsBuildNumber !== '') {
+		logger.info(`LMS build number: ${lmsBuildNumber}`);
+	} else {
+		lmsBuildNumber = undefined;
+	}
+
+	if (lmsInstanceUrl !== '') {
+		logger.info(`LMS instance URL: ${lmsInstanceUrl}`);
+	} else {
+		lmsInstanceUrl = undefined;
+	}
+
 	logger.info('Determine inject context mode');
 
-	const injectGitHubContext = getStringInput('inject-github-context', true);
+	const injectGitHubContext = getStringInput('inject-github-context', { lowerCase: true });
 
 	if (!['auto', 'force', 'off'].includes(injectGitHubContext)) {
 		throw new Error('inject context mode invalid');
@@ -82,6 +99,8 @@ const getInputs = async(logger) => {
 		awsSecretAccessKey,
 		awsSessionToken,
 		reportPath,
+		lmsBuildNumber,
+		lmsInstanceUrl,
 		injectGitHubContext,
 		dryRun,
 		debug
