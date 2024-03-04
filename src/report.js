@@ -28,8 +28,8 @@ const makeSummaryWriteRequest = (report) => {
 		countFailed,
 		countSkipped,
 		countFlaky,
-		lmsBuild,
-		lmsInstance
+		lmsBuildNumber,
+		lmsInstanceUrl
 	} = summary;
 
 	const dimensions = [
@@ -45,12 +45,12 @@ const makeSummaryWriteRequest = (report) => {
 		{ Name: 'framework', Value: framework }
 	];
 
-	if (lmsBuild) {
-		dimensions.push({ Name: 'lms_build', Value: lmsBuild });
+	if (lmsBuildNumber) {
+		dimensions.push({ Name: 'lms_build_number', Value: lmsBuildNumber });
 	}
 
-	if (lmsInstance) {
-		dimensions.push({ Name: 'lms_instance', Value: lmsInstance });
+	if (lmsInstanceUrl) {
+		dimensions.push({ Name: 'lms_instance_url', Value: lmsInstanceUrl });
 	}
 
 	return {
@@ -181,26 +181,9 @@ const writeTimestream = async(region, credentials, requests) => {
 	}
 };
 
-const finalize = async(logger, context, inputs) => {
-	logger.startGroup('Finalize test report');
-
-	const { reportPath, injectGitHubContext, debug } = inputs;
-	let report;
-
-	try {
-		const reportRaw = await fs.readFile(reportPath, 'utf8');
-
-		report = JSON.parse(reportRaw);
-	} catch {
-		throw new Error('report is not valid');
-	}
-
-	if (debug) {
-		logger.info('Loaded report\n');
-		logger.info(`${JSON.stringify(report, null, 2)}\n`);
-	}
-
-	const { summary } = report;
+const processGitHubContext = (logger, context, inputs, report) => {
+	const { injectGitHubContext } = inputs;
+	const { summary = {} } = report;
 
 	if (injectGitHubContext === 'force') {
 		logger.info('Inject GitHub context');
@@ -228,6 +211,55 @@ const finalize = async(logger, context, inputs) => {
 			}
 		}
 	}
+
+	return report;
+};
+
+const processLmsInfo = (inputs, report) => {
+	const { lmsBuildNumber, lmsInstanceUrl } = inputs;
+
+	report.summary = report.summary ?? {};
+
+	if (lmsBuildNumber) {
+		if (!report.summary.lmsBuildNumber) {
+			report.summary.lmsBuildNumber = lmsBuildNumber;
+		} else {
+			throw new Error('LMS build number already present, will not override');
+		}
+	}
+
+	if (lmsInstanceUrl) {
+		if (!report.summary.lmsInstanceUrl) {
+			report.summary.lmsInstanceUrl = lmsInstanceUrl;
+		} else {
+			throw new Error('LMS instance URL already present, will not override');
+		}
+	}
+
+	return report;
+};
+
+const finalize = async(logger, context, inputs) => {
+	logger.startGroup('Finalize test report');
+
+	const { reportPath, debug } = inputs;
+	let report;
+
+	try {
+		const reportRaw = await fs.readFile(reportPath, 'utf8');
+
+		report = JSON.parse(reportRaw);
+	} catch {
+		throw new Error('report is not valid');
+	}
+
+	if (debug) {
+		logger.info('Loaded report\n');
+		logger.info(`${JSON.stringify(report, null, 2)}\n`);
+	}
+
+	report = processGitHubContext(logger, context, inputs, report);
+	report = processLmsInfo(inputs, report);
 
 	if (debug) {
 		logger.info('Finalized report\n');

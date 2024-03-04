@@ -25,6 +25,8 @@ data to the framework.
     aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}} # required
     aws-session-token: ${{secrets.AWS_SESSION_TOKEN}} # required
     report-path: ./d2l-test-report.json # optional, defaults to shown path
+    lms-build-number: '20.24.1.123456' # optional
+    lms-instance-url: https://cd2024112345.devlms.desire2learn.com # optional
     inject-github-context: auto # optional, defaults to 'auto'
     dry-run: false # optional, only needed for testing & debugging
     debug: false # optional, only needed for testing & debugging
@@ -46,6 +48,10 @@ data to the framework.
   account. **Required**
 * `report-path`: Path to report D2L format test report JSON file. **Optional**.
   Defaults to `./d2l-test-report.json`
+* `lms-build-number`: The LMS build number of the site used to generate this
+  report. Will result in failure if already present in report. **Optional**
+* `lms-instance-url`: The LMS instance URL of the site used to generate this
+  report. Will result in failure if already present in report. **Optional**
 * `inject-github-context`: Change mode for injection of GitHub Actions context
   at report submission time. **Optional**. Defaults to `auto`
   * `auto`: Injects GitHub Actions context into report if missing
