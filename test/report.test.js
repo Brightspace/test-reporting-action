@@ -15,13 +15,21 @@ const testContext = {
 	gitBranch: 'test/branch',
 	gitSha: '0000000000000000000000000000000000000000'
 };
-const testInputs = {
+const lmsInfo = {
+	lmsBuildNumber: '20.24.1.12345',
+	lmsInstanceUrl: 'https://cd2024112345.devlms.desire2learn.com'
+};
+const testInputsNoLmsInfo = {
 	awsAccessKeyId: 'test-access-key-id',
 	awsSecretAccessKey: 'test-secret-access-key',
 	awsSessionToken: 'test-session-token',
 	injectGitHubContext: 'auto',
 	dryRun: false,
 	debug: true
+};
+const testInputsFull = {
+	...testInputsNoLmsInfo,
+	...lmsInfo
 };
 const testReportMinimal = {
 	reportId: '00000000-0000-0000-0000-000000000000',
@@ -63,24 +71,36 @@ const testReportMinimal = {
 		retries: 0
 	}]
 };
-const testReportNoContext = {
-	reportId: '00000000-0000-0000-0000-000000000000',
-	reportVersion: 1,
-	summary: {
-		...testReportMinimal.summary,
-		lmsBuild: '20.24.01.12345',
-		lmsInstance: 'https://cd2024112345.devlms.desire2learn.com/'
-	},
-	details: testReportMinimal.details
-};
-const testReportFull = {
-	reportId: '00000000-0000-0000-0000-000000000000',
-	reportVersion: 1,
+const testReportNoLmsInfo = {
+	reportId: testReportMinimal.reportId,
+	reportVersion: testReportMinimal.reportVersion,
 	summary: {
 		...testContext,
-		...testReportNoContext.summary
+		...testReportMinimal.summary
 	},
-	details: testReportMinimal.details
+	details: testReportMinimal.details.map(detail => ({
+		...detail,
+		browser: 'chromium',
+		type: 'unit',
+		tool: 'Tool',
+		experience: 'Experience'
+	}))
+};
+const testReportFull = {
+	reportId: testReportMinimal.reportId,
+	reportVersion: testReportMinimal.reportVersion,
+	summary: {
+		...testContext,
+		...lmsInfo,
+		...testReportMinimal.summary
+	},
+	details: testReportMinimal.details.map(detail => ({
+		...detail,
+		browser: 'chromium',
+		type: 'unit',
+		tool: 'Tool',
+		experience: 'Experience'
+	}))
 };
 
 const testAwsStsCredentials = {
@@ -110,10 +130,28 @@ describe('report', () => {
 	afterEach(() => sandbox.restore());
 
 	describe('finalize', () => {
-		it('partial', async() => {
+		it('minimal', async() => {
 			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportMinimal));
 
-			const report = await finalize(logger, testContext, testInputs);
+			const report = await finalize(logger, testContext, testInputsFull);
+			const { reportId, reportVersion, summary } = report;
+
+			expect(reportId).to.eq(testReportMinimal.reportId);
+			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
+			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContext.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContext.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContext.gitBranch);
+			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+		});
+
+		it('no lms info', async() => {
+			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportNoLmsInfo));
+
+			const report = await finalize(logger, testContext, testInputsFull);
 			const { reportId, reportVersion, summary } = report;
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
@@ -125,33 +163,18 @@ describe('report', () => {
 			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
 			expect(summary.gitBranch).to.eq(testContext.gitBranch);
 			expect(summary.gitSha).to.eq(testContext.gitSha);
-		});
-
-		it('no context', async() => {
-			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportNoContext));
-
-			const report = await finalize(logger, testContext, testInputs);
-			const { reportId, reportVersion, summary } = report;
-
-			expect(reportId).to.eq(testReportNoContext.reportId);
-			expect(reportVersion).to.eq(testReportNoContext.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContext.gitBranch);
-			expect(summary.gitSha).to.eq(testContext.gitSha);
+			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		it('full', async() => {
 			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportFull));
 
-			const report = await finalize(logger, testContext, testInputs);
+			const report = await finalize(logger, testContext, testInputsNoLmsInfo);
 			const { reportId, reportVersion, summary } = report;
 
-			expect(reportId).to.eq(testReportNoContext.reportId);
-			expect(reportVersion).to.eq(testReportNoContext.reportVersion);
+			expect(reportId).to.eq(testReportMinimal.reportId);
+			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
 			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
 			expect(summary.githubRepository).to.eq(testContext.githubRepository);
 			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
@@ -159,6 +182,8 @@ describe('report', () => {
 			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
 			expect(summary.gitBranch).to.eq(testContext.gitBranch);
 			expect(summary.gitSha).to.eq(testContext.gitSha);
+			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		describe('fails', () => {
@@ -166,7 +191,7 @@ describe('report', () => {
 				sandbox.stub(fs, 'readFile').throws();
 
 				try {
-					await finalize(logger, testContext, testInputs);
+					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
 					expect(message).to.contain('report is not valid');
 
@@ -180,7 +205,7 @@ describe('report', () => {
 				sandbox.stub(fs, 'readFile').resolves('this is not json');
 
 				try {
-					await finalize(logger, testContext, testInputs);
+					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
 					expect(message).to.contain('report is not valid');
 
@@ -194,7 +219,7 @@ describe('report', () => {
 				sandbox.stub(fs, 'readFile').resolves('{}');
 
 				try {
-					await finalize(logger, testContext, testInputs);
+					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
 					expect(message).to.contain('report does not conform to schema');
 
@@ -203,6 +228,53 @@ describe('report', () => {
 
 				throw new Error('failed');
 			});
+
+			describe('already present', () => {
+				it('lms build number', async() => {
+					const report = {
+						...testReportNoLmsInfo,
+						summary: {
+							...testReportNoLmsInfo.summary,
+							lmsBuildNumber: lmsInfo.lmsBuildNumber
+						}
+					};
+
+					sandbox.stub(fs, 'readFile').resolves(JSON.stringify(report));
+
+					try {
+						await finalize(logger, testContext, testInputsFull);
+					} catch ({ message }) {
+						expect(message).to.contain('LMS build number already present');
+
+						return;
+					}
+
+					throw new Error('failed');
+				});
+
+				it('lms instance url', async() => {
+					const report = {
+						...testReportNoLmsInfo,
+						summary: {
+							...testReportNoLmsInfo.summary,
+							lmsInstanceUrl: lmsInfo.lmsInstanceUrl
+						}
+					};
+
+					sandbox.stub(fs, 'readFile').resolves(JSON.stringify(report));
+
+					try {
+						await finalize(logger, testContext, testInputsFull);
+					} catch ({ message }) {
+						expect(message).to.contain('LMS instance URL already present');
+
+						return;
+					}
+
+					throw new Error('failed');
+				});
+			});
+
 		});
 	});
 
@@ -224,7 +296,7 @@ describe('report', () => {
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
 
-			await submit(logger, testContext, testInputs, testReportFull);
+			await submit(logger, testContext, testInputsFull, testReportFull);
 
 			expect(stsClientMock.calls().length).to.eq(1);
 			expect(timestreamWriteClientMock.calls().length).to.eq(2);
@@ -232,7 +304,7 @@ describe('report', () => {
 
 		it('dry run', async() => {
 			const dryRunInputs = {
-				...testInputs,
+				...testInputsFull,
 				dryRun: true
 			};
 
@@ -246,14 +318,14 @@ describe('report', () => {
 
 		it('debug', async() => {
 			const debugInputs = {
-				...testInputs,
+				...testInputsFull,
 				debug: true
 			};
 
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
 
-			await submit(logger, testContext, debugInputs, testReportFull);
+			await submit(logger, testContext, debugInputs, testReportNoLmsInfo);
 
 			expect(stsClientMock.calls().length).to.eq(1);
 			expect(timestreamWriteClientMock.calls().length).to.eq(2);
@@ -264,7 +336,7 @@ describe('report', () => {
 				stsClientMock.on(AssumeRoleCommand).rejects(new Error('failed'));
 
 				try {
-					await submit(logger, testContext, testInputs, testReportFull);
+					await submit(logger, testContext, testInputsNoLmsInfo, testReportNoLmsInfo);
 				} catch ({ message }) {
 					expect(message).to.contain('Unable to assume required role');
 					expect(stsClientMock.calls().length).to.eq(1);
@@ -283,7 +355,7 @@ describe('report', () => {
 					.rejects(new Error('failed'));
 
 				try {
-					await submit(logger, testContext, testInputs, testReportFull);
+					await submit(logger, testContext, testInputsNoLmsInfo, testReportNoLmsInfo);
 				} catch ({ message }) {
 					expect(message).to.contain('Unable to submit write requests');
 					expect(stsClientMock.calls().length).to.eq(1);

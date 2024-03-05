@@ -15,6 +15,12 @@ inputs:
     description: Path to report D2L format test report JSON file
     required: true
     default: ./d2l-test-report.json
+  lms-build-number:
+    description: LMS build number used in the generation of this report
+    required: false
+  lms-instance-url:
+    description: LMS instance URL used in the generation of this report
+    required: false
   inject-github-context:
     description: Change mode for injection of GitHub Actions context at report submission time
     required: true
