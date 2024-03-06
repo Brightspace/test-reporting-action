@@ -80,6 +80,7 @@ jobs:
             New build required - pull request
             #${{steps.changes.outputs.pull-request-number}} has been opened with
             new built files.
+          post-mode: hide-previous
       - name: Report status
         if: >
           steps.changes.outputs.pull-request-operation == 'created' ||
