@@ -332,13 +332,33 @@ describe('report', () => {
 		});
 
 		describe('fails', () => {
-			it('invalid credentials', async() => {
-				stsClientMock.on(AssumeRoleCommand).rejects(new Error('failed'));
+			describe('invalid credentials', () => {
+				it('generic error', async() => {
+					stsClientMock.on(AssumeRoleCommand).rejects(new Error('failed'));
+
+					try {
+						await submit(logger, testContext, testInputsNoLmsInfo, testReportNoLmsInfo);
+					} catch ({ message }) {
+						expect(message).to.contain('Unable to assume required role');
+						expect(message).to.not.contain('Possibly missing repo-settings set-up');
+						expect(stsClientMock.calls().length).to.eq(1);
+						expect(timestreamWriteClientMock.calls().length).to.eq(0);
+
+						return;
+					}
+
+					throw new Error('failed');
+				});
+			});
+
+			it('permission error', async() => {
+				stsClientMock.on(AssumeRoleCommand).rejects(new Error('User: is not authorized to perform'));
 
 				try {
 					await submit(logger, testContext, testInputsNoLmsInfo, testReportNoLmsInfo);
 				} catch ({ message }) {
 					expect(message).to.contain('Unable to assume required role');
+					expect(message).to.contain('Possibly missing repo-settings set-up');
 					expect(stsClientMock.calls().length).to.eq(1);
 					expect(timestreamWriteClientMock.calls().length).to.eq(0);
 
