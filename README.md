@@ -14,6 +14,10 @@ enable the `test_reporting` option for you repository in [repo-settings]. This
 will give your repository access to have the GitHub Action submit test reporting
 data to the framework.
 
+> [!CAUTION]
+> Without this set-up you will see errors about being `unable to assume required
+> role` and the action will fail to run.
+
 ## Usage
 
 ```yml
