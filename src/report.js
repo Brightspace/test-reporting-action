@@ -330,6 +330,10 @@ const submit = async(logger, context, inputs, report) => {
 			]
 		);
 	} catch ({ message }) {
+		if (message.includes('is not authorized to perform')) {
+			throw new Error('Unable to assume required role. Possibly missing repo-settings set-up. Please see https://github.com/Brightspace/repo-settings/blob/main/docs/test-reporting.md for details');
+		}
+
 		throw new Error(`Unable to assume required role: ${message}`);
 	}
 
