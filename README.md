@@ -16,7 +16,7 @@ data to the framework.
 
 > [!CAUTION]
 > Without this set-up you will see errors about being `unable to assume required
-> role` and the action will fail to run.
+> role` in the GitHub Action logs and the action will fail to run.
 
 ## Usage
 
@@ -28,12 +28,12 @@ data to the framework.
     aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}} # required
     aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}} # required
     aws-session-token: ${{secrets.AWS_SESSION_TOKEN}} # required
-    report-path: ./d2l-test-report.json # optional, defaults to shown path
+    report-path: ./d2l-test-report.json # optional
     lms-build-number: '20.24.1.123456' # optional
     lms-instance-url: https://cd2024112345.devlms.desire2learn.com # optional
-    inject-github-context: auto # optional, defaults to 'auto'
-    dry-run: false # optional, only needed for testing & debugging
-    debug: false # optional, only needed for testing & debugging
+    inject-github-context: auto # optional
+    dry-run: false # optional
+    debug: false # optional
 ...
 ```
 
@@ -44,29 +44,30 @@ data to the framework.
 
 ### Inputs
 
-* `aws-access-key-id`: Specifies an AWS access key associated with an IAM
-  account. **Required**
-* `aws-secret-access-key`: Specifies the secret key associated with the access
-  key. This is essentially the "password" for the access key. **Required**
-* `aws-access-key-id`: Specifies an AWS access key associated with an IAM
-  account. **Required**
-* `report-path`: Path to report D2L format test report JSON file. **Optional**.
-  Defaults to `./d2l-test-report.json`
+* `aws-access-key-id` (required): Specifies an AWS access key associated with an
+  IAM account.
+* `aws-secret-access-key` (required): Specifies the secret key associated with
+  the access key. This is essentially the "password" for the access key.
+* `aws-access-key-id` (required): Specifies an AWS access key associated with an
+  IAM account.
+* `report-path` (default: `./d2l-test-report.json`): Path to report D2L format
+  test report JSON file.
 * `lms-build-number`: The LMS build number of the site used to generate this
-  report. Will result in failure if already present in report. **Optional**
+  report. Will result in failure if already present in report.
 * `lms-instance-url`: The LMS instance URL of the site used to generate this
-  report. Will result in failure if already present in report. **Optional**
-* `inject-github-context`: Change mode for injection of GitHub Actions context
-  at report submission time. **Optional**. Defaults to `auto`
+  report. Will result in failure if already present in report.
+* `inject-github-context` (default: `auto`): Change mode for injection of
+  GitHub Actions context at report submission time.
   * `auto`: Injects GitHub Actions context into report if missing
   * `force`: Injects GitHub Actions context into report always
   * `off`: Will not inject GitHub Actions context into report even if missing,
     can result in validation failure if not present
-* `dry-run`: Enable or disable dry run mode. Will perform all operations except
-  final submission of report data to backend. **Optional**. Defaults to `false`
-* `debug`: Enable or disable debug mode. Will enable additional log messages.
-  Does not stop final submission of report data to backend. **Optional**.
-  Defaults to `false`
+* `dry-run` (default: `false`): Enable or disable dry run mode. Will perform all
+  operations except final submission of report data to backend. Only really
+  useful for debugging and testing.
+* `debug` (default: `false`): Enable or disable debug mode. Will enable
+  additional log messages. Does not stop final submission of report data to
+  backend. Only really useful for debugging and testing.
 
 ## Developing
 
