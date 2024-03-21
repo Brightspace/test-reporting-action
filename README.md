@@ -56,7 +56,7 @@ data to the framework.
   report. Will result in failure if already present in report.
 * `lms-instance-url`: The LMS instance URL of the site used to generate this
   report. Will result in failure if already present in report.
-* `inject-github-context` I(default: `auto`): Change mode for injection of
+* `inject-github-context` (default: `auto`): Change mode for injection of
   GitHub Actions context at report submission time.
   * `auto`: Injects GitHub Actions context into report if missing
   * `force`: Injects GitHub Actions context into report always
