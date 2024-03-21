@@ -72,6 +72,15 @@ jobs:
         env:
           GIT_USER: github-actions[bot]
           GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+      - name: Hide Comment
+        if: steps.changes.outputs.pull-request-operation == 'created'
+        uses: BrightspaceUI/actions/comment-on-pr@main
+        with:
+          message: >
+            New build required - pull request
+            #${{steps.changes.outputs.pull-request-number}} has been opened with
+            new built files.
+          post-mode: hide-previous
       - name: Leave comment
         if: steps.changes.outputs.pull-request-operation == 'created'
         uses: BrightspaceUI/actions/comment-on-pr@main
