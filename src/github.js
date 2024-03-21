@@ -112,7 +112,7 @@ const getInputs = async(logger) => {
 const updateSummary = (logger, context, inputs) => {
 	logger.startGroup('Update GitHub Actions summary');
 
-	summary.addHeading('Test Reporting');
+	summary.addHeading('Test Reporting', 2);
 	summary.addRaw('The overview of data submitted can be found ');
 
 	const overviewHref = new URL('', testReportingUrl);
