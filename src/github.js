@@ -1,8 +1,10 @@
-import { endGroup, error, info, startGroup, warning } from '@actions/core';
+import { endGroup, error, info, startGroup, summary, warning } from '@actions/core';
 import { getContext as getGitHubContext } from 'd2l-test-reporting/helpers/github.js';
 import fs from 'fs/promises';
 import { getInput, getBooleanInput, setFailed } from '@actions/core';
 import { resolve } from 'path';
+
+const testReportingUrl = 'https://test-reporting.d2l.dev';
 
 const makeLogger = () => ({ startGroup, endGroup, info, warning, error });
 
@@ -107,4 +109,47 @@ const getInputs = async(logger) => {
 	};
 };
 
-export { getContext, getInputs, makeLogger, setFailed };
+const updateSummary = (logger, context, inputs) => {
+	logger.startGroup('Update GitHub Actions summary');
+
+	summary.addHeading('Test Reporting');
+	summary.addRaw('The overview of data submitted can be found ');
+
+	const overviewHref = new URL('', testReportingUrl);
+	const { searchParams: overviewSearchParams } = overviewHref;
+	const { githubOrganization, githubRepository } = context;
+
+	overviewSearchParams.set('var-githubOrganizations', githubOrganization);
+	overviewSearchParams.set('var-githubRepositories', githubRepository);
+
+	summary.addLink('here', overviewHref.toString());
+	summary.addEOL();
+	summary.addRaw('A more detailed view of data submitted can be found ');
+
+	const testReportingDrillDown = new URL('drill-down', testReportingUrl);
+
+	const { searchParams: drillDownSearchParams } = testReportingDrillDown;
+
+	drillDownSearchParams.set('var-githubOrganizations', githubOrganization);
+	drillDownSearchParams.set('var-githubRepositories', githubRepository);
+
+	summary.addLink('here', testReportingDrillDown.toString());
+	summary.addEOL();
+
+	const { debug, dryRun } = inputs;
+
+	if (debug) {
+		logger.info('Generated summary\n');
+		logger.info(`${summary.stringify()}\n`);
+	}
+
+	if (dryRun) {
+		logger.info('Dry run, skipping GitHub Action summary update');
+
+		return;
+	}
+
+	summary.write();
+};
+
+export { getContext, getInputs, makeLogger, setFailed, updateSummary };

@@ -1,4 +1,4 @@
-import { getContext, getInputs, makeLogger, setFailed } from './github.js';
+import { getContext, getInputs, makeLogger, setFailed, updateSummary } from './github.js';
 import { finalize, submit } from './report.js';
 
 (async() => {
@@ -10,6 +10,10 @@ import { finalize, submit } from './report.js';
 		const report = await finalize(logger, context, inputs);
 
 		await submit(logger, context, inputs, report);
+
+		const { summary } = report;
+
+		updateSummary(logger, summary, inputs);
 	} catch ({ message }) {
 		setFailed(message);
 
