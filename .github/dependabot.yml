@@ -1,17 +1,23 @@
 version: 2
 updates:
   - package-ecosystem: npm
+    open-pull-requests-limit: 99
     directory: /
     schedule:
       interval: weekly
+      time: '08:00'
+      timezone: America/Toronto
+    versioning-strategy: increase
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-patch']
     groups:
       aws-clients:
         dependency-type: production
         patterns:
           - '@aws-sdk/*'
-    ignore:
-      # update-dependencies workflow already handles minor/patch updates
-      - dependency-name: '*'
-        update-types:
-          - version-update:semver-minor
-          - version-update:semver-patch
+      eslint:
+        dependency-type: development
+        patterns:
+          - eslint
+          - eslint-*
