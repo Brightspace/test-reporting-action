@@ -1,7 +1,8 @@
 # Test Reporting (GitHub Action)
 
 A GitHub Action for uploading D2L format test reports to back-end visualization
-and querying infrastructure.
+and querying infrastructure. This action is meant to be used in conjunction with
+reporters from [node reporters].
 
 ## Set-Up
 
