@@ -1,9 +1,5 @@
 # Test Reporting (GitHub Action)
 
-> [!WARNING]
-> This is still a work in progress. Any usage of this action is subject to
-> change without notice.
-
 A GitHub Action for uploading D2L format test reports to back-end visualization
 and querying infrastructure.
 
