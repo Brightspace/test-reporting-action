@@ -26,7 +26,7 @@ data to the framework.
     aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}} # required
     aws-session-token: ${{secrets.AWS_SESSION_TOKEN}} # required
     report-path: ./d2l-test-report.json # optional
-    lms-build-number: '20.24.1.123456' # optional
+    lms-build-number: '20.24.1.12345' # optional
     lms-instance-url: https://cd2024112345.devlms.desire2learn.com # optional
     inject-github-context: auto # optional
     dry-run: false # optional
