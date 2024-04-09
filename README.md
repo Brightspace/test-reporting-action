@@ -18,20 +18,12 @@ data to the framework.
 ## Usage
 
 ```yml
-...
 - name: Upload test report
   uses: Brightspace/test-reporting-action@main
   with:
-    aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}} # required
-    aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}} # required
-    aws-session-token: ${{secrets.AWS_SESSION_TOKEN}} # required
-    report-path: ./d2l-test-report.json # optional
-    lms-build-number: '20.24.1.123456' # optional
-    lms-instance-url: https://cd2024112345.devlms.desire2learn.com # optional
-    inject-github-context: auto # optional
-    dry-run: false # optional
-    debug: false # optional
-...
+    aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+    aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+    aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
 ```
 
 > [!IMPORTANT]
@@ -50,9 +42,9 @@ data to the framework.
 * `report-path` (default: `./d2l-test-report.json`): Path to report D2L format
   test report JSON file.
 * `lms-build-number`: The LMS build number of the site used to generate this
-  report. Will result in failure if already present in report.
+  report. Will throw an error if provided and already present in the report.
 * `lms-instance-url`: The LMS instance URL of the site used to generate this
-  report. Will result in failure if already present in report.
+  report. Will throw an error if provided and already present in the report.
 * `inject-github-context` (default: `auto`): Change mode for injection of
   GitHub Actions context at report submission time.
   * `auto`: Injects GitHub Actions context into report if missing
