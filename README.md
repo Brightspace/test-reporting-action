@@ -18,20 +18,12 @@ data to the framework.
 ## Usage
 
 ```yml
-...
 - name: Upload test report
   uses: Brightspace/test-reporting-action@main
   with:
-    aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}} # required
-    aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}} # required
-    aws-session-token: ${{secrets.AWS_SESSION_TOKEN}} # required
-    report-path: ./d2l-test-report.json # optional
-    lms-build-number: '20.24.1.123456' # optional
-    lms-instance-url: https://cd2024112345.devlms.desire2learn.com # optional
-    inject-github-context: auto # optional
-    dry-run: false # optional
-    debug: false # optional
-...
+    aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+    aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+    aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
 ```
 
 > [!IMPORTANT]
