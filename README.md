@@ -42,9 +42,9 @@ data to the framework.
 * `report-path` (default: `./d2l-test-report.json`): Path to report D2L format
   test report JSON file.
 * `lms-build-number`: The LMS build number of the site used to generate this
-  report. Will result in failure if already present in report.
+  report. Will throw an error if provided and already present in the report.
 * `lms-instance-url`: The LMS instance URL of the site used to generate this
-  report. Will result in failure if already present in report.
+  report. Will throw an error if provided and already present in the report.
 * `inject-github-context` (default: `auto`): Change mode for injection of
   GitHub Actions context at report submission time.
   * `auto`: Injects GitHub Actions context into report if missing
