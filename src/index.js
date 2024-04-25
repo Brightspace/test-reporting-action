@@ -11,9 +11,15 @@ import { finalize, submit } from './report.js';
 
 		await submit(logger, context, inputs, report);
 
-		const { summary } = report;
+		const { summary: { githubOrganization, githubRepository } } = report;
+		const processedContext = {
+			github: {
+				organization: githubOrganization,
+				repository: githubRepository
+			}
+		};
 
-		updateSummary(logger, summary, inputs);
+		updateSummary(logger, processedContext, inputs);
 	} catch ({ message }) {
 		setFailed(message);
 
