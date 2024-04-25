@@ -234,12 +234,14 @@ const finalize = async(logger, context, inputs) => {
 
 	logger.endGroup();
 
-	return report.toJSON();
+	return report;
 };
 
 const submit = async(logger, context, inputs, report) => {
 	logger.startGroup('Submit report');
 	logger.info('Generate summary write request');
+
+	report = report.toJSON();
 
 	const { debug } = inputs;
 	const summaryWriteRequest = makeSummaryWriteRequest(report);

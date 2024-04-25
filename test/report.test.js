@@ -158,6 +158,14 @@ const testAwsStsCredentials = {
 	}
 };
 
+const makeDummyReport = (report) => {
+	return {
+		toJSON() {
+			return report;
+		}
+	};
+};
+
 describe('report', () => {
 	let sandbox;
 	let logger;
@@ -181,7 +189,7 @@ describe('report', () => {
 			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportMinimal));
 
 			const report = await finalize(logger, testContext, testInputsFull);
-			const { reportId, reportVersion, summary } = report;
+			const { reportId, reportVersion, summary } = report.toJSON();
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
@@ -199,7 +207,7 @@ describe('report', () => {
 			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
 			const report = await finalize(logger, testContext, testInputsFull);
-			const { reportId, reportVersion, summary } = report;
+			const { reportId, reportVersion, summary } = report.toJSON();
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
@@ -218,7 +226,7 @@ describe('report', () => {
 			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportFull));
 
 			const report = await finalize(logger, testContext, testInputsNoLmsInfo);
-			const { reportId, reportVersion, summary } = report;
+			const { reportId, reportVersion, summary } = report.toJSON();
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
@@ -237,7 +245,7 @@ describe('report', () => {
 			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
 			const report = await finalize(logger, testOtherContext, testInputsForceInject);
-			const { reportId, reportVersion, summary } = report;
+			const { reportId, reportVersion, summary } = report.toJSON();
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
@@ -255,7 +263,7 @@ describe('report', () => {
 			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
 			const report = await finalize(logger, testOtherContext, testInputsDisableInject);
-			const { reportId, reportVersion, summary } = report;
+			const { reportId, reportVersion, summary } = report.toJSON();
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
@@ -379,7 +387,9 @@ describe('report', () => {
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
 
-			await submit(logger, testContext, testInputsFull, testReportFull);
+			const report = makeDummyReport(testReportFull);
+
+			await submit(logger, testContext, testInputsFull, report);
 
 			expect(stsClientMock.calls().length).to.eq(1);
 			expect(timestreamWriteClientMock.calls().length).to.eq(2);
@@ -393,7 +403,9 @@ describe('report', () => {
 
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 
-			await submit(logger, testContext, dryRunInputs, testReportFull);
+			const report = makeDummyReport(testReportFull);
+
+			await submit(logger, testContext, dryRunInputs, report);
 
 			expect(stsClientMock.calls().length).to.eq(1);
 			expect(timestreamWriteClientMock.calls().length).to.eq(0);
@@ -408,7 +420,9 @@ describe('report', () => {
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
 
-			await submit(logger, testContext, debugInputs, testReportNoLmsInfo);
+			const report = makeDummyReport(testReportNoLmsInfo);
+
+			await submit(logger, testContext, debugInputs, report);
 
 			expect(stsClientMock.calls().length).to.eq(1);
 			expect(timestreamWriteClientMock.calls().length).to.eq(2);
@@ -419,8 +433,10 @@ describe('report', () => {
 				it('generic error', async() => {
 					stsClientMock.on(AssumeRoleCommand).rejects(new Error('failed'));
 
+					const report = makeDummyReport(testReportNoLmsInfo);
+
 					try {
-						await submit(logger, testContext, testInputsNoLmsInfo, testReportNoLmsInfo);
+						await submit(logger, testContext, testInputsNoLmsInfo, report);
 					} catch ({ message }) {
 						expect(message).to.contain('Unable to assume required role');
 						expect(message).to.not.contain('Possibly missing repo-settings set-up');
@@ -436,8 +452,10 @@ describe('report', () => {
 				it('permission error', async() => {
 					stsClientMock.on(AssumeRoleCommand).rejects(new Error('User: is not authorized to perform'));
 
+					const report = makeDummyReport(testReportNoLmsInfo);
+
 					try {
-						await submit(logger, testContext, testInputsNoLmsInfo, testReportNoLmsInfo);
+						await submit(logger, testContext, testInputsNoLmsInfo, report);
 					} catch ({ message }) {
 						expect(message).to.contain('Unable to assume required role');
 						expect(message).to.contain('Possibly missing repo-settings set-up');
@@ -457,8 +475,10 @@ describe('report', () => {
 					.on(WriteRecordsCommand)
 					.rejects(new Error('failed'));
 
+				const report = makeDummyReport(testReportNoLmsInfo);
+
 				try {
-					await submit(logger, testContext, testInputsNoLmsInfo, testReportNoLmsInfo);
+					await submit(logger, testContext, testInputsNoLmsInfo, report);
 				} catch ({ message }) {
 					expect(message).to.contain('Unable to submit write requests');
 					expect(stsClientMock.calls().length).to.eq(1);
