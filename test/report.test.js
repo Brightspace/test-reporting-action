@@ -3,18 +3,54 @@ import { finalize, submit } from '../src/report.js';
 import { TimestreamWriteClient, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
 import { createSandbox } from 'sinon';
 import { expect } from 'chai';
-import fs from 'fs/promises';
+import fs from 'fs';
 import { mockClient } from 'aws-sdk-client-mock';
 
 const testContext = {
-	githubOrganization: 'TestOrganization',
-	githubRepository: 'test-repository',
-	githubWorkflow: 'test-workflow.yml',
-	githubRunId: 12345,
-	githubRunAttempt: 1,
-	gitBranch: 'test/branch',
-	gitSha: '0000000000000000000000000000000000000000'
+	github: {
+		organization: 'TestOrganization',
+		repository: 'test-repository',
+		workflow: 'test-workflow.yml',
+		runId: 12345,
+		runAttempt: 1
+	},
+	git: {
+		branch: 'test/branch',
+		sha: '0000000000000000000000000000000000000000'
+	}
 };
+const testOtherContext = {
+	github: {
+		organization: 'TestOrganizationOther',
+		repository: 'test-repository-other',
+		workflow: 'test-workflow-other.yml',
+		runId: 67890,
+		runAttempt: 2
+	},
+	git: {
+		branch: 'test/branch/other',
+		sha: '1111111111111111111111111111111111111111'
+	}
+};
+const testContextFlat = {
+	githubOrganization: testContext.github.organization,
+	githubRepository: testContext.github.repository,
+	githubWorkflow: testContext.github.workflow,
+	githubRunId: testContext.github.runId,
+	githubRunAttempt: testContext.github.runAttempt,
+	gitBranch: testContext.git.branch,
+	gitSha: testContext.git.sha
+};
+const testOtherContextFlat = {
+	githubOrganization: testOtherContext.github.organization,
+	githubRepository: testOtherContext.github.repository,
+	githubWorkflow: testOtherContext.github.workflow,
+	githubRunId: testOtherContext.github.runId,
+	githubRunAttempt: testOtherContext.github.runAttempt,
+	gitBranch: testOtherContext.git.branch,
+	gitSha: testOtherContext.git.sha
+};
+
 const lmsInfo = {
 	lmsBuildNumber: '20.24.1.12345',
 	lmsInstanceUrl: 'https://cd2024112345.devlms.desire2learn.com'
@@ -24,12 +60,23 @@ const testInputsNoLmsInfo = {
 	awsSecretAccessKey: 'test-secret-access-key',
 	awsSessionToken: 'test-session-token',
 	injectGitHubContext: 'auto',
+	reportPath: './d2l-test-report.json',
 	dryRun: false,
 	debug: true
 };
 const testInputsFull = {
 	...testInputsNoLmsInfo,
 	...lmsInfo
+};
+const testInputsForceInject = {
+	...testInputsNoLmsInfo,
+	...lmsInfo,
+	injectGitHubContext: 'force'
+};
+const testInputsDisableInject = {
+	...testInputsNoLmsInfo,
+	...lmsInfo,
+	injectGitHubContext: 'off'
 };
 const testReportMinimal = {
 	reportId: '00000000-0000-0000-0000-000000000000',
@@ -75,7 +122,7 @@ const testReportNoLmsInfo = {
 	reportId: testReportMinimal.reportId,
 	reportVersion: testReportMinimal.reportVersion,
 	summary: {
-		...testContext,
+		...testContextFlat,
 		...testReportMinimal.summary
 	},
 	details: testReportMinimal.details.map(detail => ({
@@ -90,7 +137,7 @@ const testReportFull = {
 	reportId: testReportMinimal.reportId,
 	reportVersion: testReportMinimal.reportVersion,
 	summary: {
-		...testContext,
+		...testContextFlat,
 		...lmsInfo,
 		...testReportMinimal.summary
 	},
@@ -131,69 +178,105 @@ describe('report', () => {
 
 	describe('finalize', () => {
 		it('minimal', async() => {
-			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportMinimal));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportMinimal));
 
 			const report = await finalize(logger, testContext, testInputsFull);
 			const { reportId, reportVersion, summary } = report;
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContext.gitBranch);
+			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
 			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		it('no lms info', async() => {
-			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportNoLmsInfo));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
 			const report = await finalize(logger, testContext, testInputsFull);
 			const { reportId, reportVersion, summary } = report;
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContext.gitBranch);
-			expect(summary.gitSha).to.eq(testContext.gitSha);
+			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
+			expect(summary.gitSha).to.eq(testContextFlat.gitSha);
 			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		it('full', async() => {
-			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportFull));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportFull));
 
 			const report = await finalize(logger, testContext, testInputsNoLmsInfo);
 			const { reportId, reportVersion, summary } = report;
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContext.gitBranch);
-			expect(summary.gitSha).to.eq(testContext.gitSha);
+			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
+			expect(summary.gitSha).to.eq(testContextFlat.gitSha);
+			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+		});
+
+		it('force inject context', async() => {
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
+
+			const report = await finalize(logger, testOtherContext, testInputsForceInject);
+			const { reportId, reportVersion, summary } = report;
+
+			expect(reportId).to.eq(testReportMinimal.reportId);
+			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
+			expect(summary.githubOrganization).to.eq(testOtherContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testOtherContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testOtherContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testOtherContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testOtherContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testOtherContextFlat.gitBranch);
+			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+		});
+
+		it('disable inject context', async() => {
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
+
+			const report = await finalize(logger, testOtherContext, testInputsDisableInject);
+			const { reportId, reportVersion, summary } = report;
+
+			expect(reportId).to.eq(testReportMinimal.reportId);
+			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
+			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
 			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		describe('fails', () => {
 			it('file read', async() => {
-				sandbox.stub(fs, 'readFile').throws();
+				sandbox.stub(fs, 'readFileSync').throws();
 
 				try {
 					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
-					expect(message).to.contain('report is not valid');
+					expect(message).to.contain('Unable to read/parse report');
 
 					return;
 				}
@@ -202,12 +285,12 @@ describe('report', () => {
 			});
 
 			it('not json', async() => {
-				sandbox.stub(fs, 'readFile').resolves('this is not json');
+				sandbox.stub(fs, 'readFileSync').returns('this is not json');
 
 				try {
 					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
-					expect(message).to.contain('report is not valid');
+					expect(message).to.contain('Unable to read/parse report');
 
 					return;
 				}
@@ -216,12 +299,12 @@ describe('report', () => {
 			});
 
 			it('validation', async() => {
-				sandbox.stub(fs, 'readFile').resolves('{}');
+				sandbox.stub(fs, 'readFileSync').returns('{}');
 
 				try {
 					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
-					expect(message).to.contain('report does not conform to schema');
+					expect(message).to.contain('Unable to determine report version');
 
 					return;
 				}
@@ -239,7 +322,7 @@ describe('report', () => {
 						}
 					};
 
-					sandbox.stub(fs, 'readFile').resolves(JSON.stringify(report));
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(report));
 
 					try {
 						await finalize(logger, testContext, testInputsFull);
@@ -261,7 +344,7 @@ describe('report', () => {
 						}
 					};
 
-					sandbox.stub(fs, 'readFile').resolves(JSON.stringify(report));
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(report));
 
 					try {
 						await finalize(logger, testContext, testInputsFull);
