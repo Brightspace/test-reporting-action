@@ -45,7 +45,7 @@ const getContext = (logger) => {
 	return context;
 };
 
-const getInputs = async (logger) => {
+const getInputs = async(logger) => {
 	logger.startGroup('Gather GitHub inputs');
 	logger.info('Gather credentials');
 

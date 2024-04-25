@@ -7,14 +7,50 @@ import fs from 'fs';
 import { mockClient } from 'aws-sdk-client-mock';
 
 const testContext = {
-	githubOrganization: 'TestOrganization',
-	githubRepository: 'test-repository',
-	githubWorkflow: 'test-workflow.yml',
-	githubRunId: 12345,
-	githubRunAttempt: 1,
-	gitBranch: 'test/branch',
-	gitSha: '0000000000000000000000000000000000000000'
+	github: {
+		organization: 'TestOrganization',
+		repository: 'test-repository',
+		workflow: 'test-workflow.yml',
+		runId: 12345,
+		runAttempt: 1
+	},
+	git: {
+		branch: 'test/branch',
+		sha: '0000000000000000000000000000000000000000'
+	}
 };
+const testOtherContext = {
+	github: {
+		organization: 'TestOrganizationOther',
+		repository: 'test-repository-other',
+		workflow: 'test-workflow-other.yml',
+		runId: 67890,
+		runAttempt: 2
+	},
+	git: {
+		branch: 'test/branch/other',
+		sha: '1111111111111111111111111111111111111111'
+	}
+};
+const testContextFlat = {
+	githubOrganization: testContext.github.organization,
+	githubRepository: testContext.github.repository,
+	githubWorkflow: testContext.github.workflow,
+	githubRunId: testContext.github.runId,
+	githubRunAttempt: testContext.github.runAttempt,
+	gitBranch: testContext.git.branch,
+	gitSha: testContext.git.sha
+};
+const testOtherContextFlat = {
+	githubOrganization: testOtherContext.github.organization,
+	githubRepository: testOtherContext.github.repository,
+	githubWorkflow: testOtherContext.github.workflow,
+	githubRunId: testOtherContext.github.runId,
+	githubRunAttempt: testOtherContext.github.runAttempt,
+	gitBranch: testOtherContext.git.branch,
+	gitSha: testOtherContext.git.sha
+};
+
 const lmsInfo = {
 	lmsBuildNumber: '20.24.1.12345',
 	lmsInstanceUrl: 'https://cd2024112345.devlms.desire2learn.com'
@@ -86,7 +122,7 @@ const testReportNoLmsInfo = {
 	reportId: testReportMinimal.reportId,
 	reportVersion: testReportMinimal.reportVersion,
 	summary: {
-		...testContext,
+		...testContextFlat,
 		...testReportMinimal.summary
 	},
 	details: testReportMinimal.details.map(detail => ({
@@ -101,7 +137,7 @@ const testReportFull = {
 	reportId: testReportMinimal.reportId,
 	reportVersion: testReportMinimal.reportVersion,
 	summary: {
-		...testContext,
+		...testContextFlat,
 		...lmsInfo,
 		...testReportMinimal.summary
 	},
@@ -149,12 +185,12 @@ describe('report', () => {
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContext.gitBranch);
+			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
 			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
@@ -167,13 +203,13 @@ describe('report', () => {
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContext.gitBranch);
-			expect(summary.gitSha).to.eq(testContext.gitSha);
+			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
+			expect(summary.gitSha).to.eq(testContextFlat.gitSha);
 			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
@@ -186,13 +222,13 @@ describe('report', () => {
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContext.gitBranch);
-			expect(summary.gitSha).to.eq(testContext.gitSha);
+			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
+			expect(summary.gitSha).to.eq(testContextFlat.gitSha);
 			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
@@ -200,27 +236,17 @@ describe('report', () => {
 		it('force inject context', async() => {
 			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
-			const dummyContext = {
-				githubOrganization: 'TestOrganizationOther',
-				githubRepository: 'test-repository-other',
-				githubWorkflow: 'test-workflow-other.yml',
-				githubRunId: 67890,
-				githubRunAttempt: 2,
-				gitBranch: 'test/branch/other',
-				gitSha: '1111111111111111111111111111111111111111'
-			};
-
-			const report = await finalize(logger, dummyContext, testInputsForceInject);
+			const report = await finalize(logger, testOtherContext, testInputsForceInject);
 			const { reportId, reportVersion, summary } = report;
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(dummyContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(dummyContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(dummyContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(dummyContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(dummyContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(dummyContext.gitBranch);
+			expect(summary.githubOrganization).to.eq(testOtherContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testOtherContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testOtherContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testOtherContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testOtherContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testOtherContextFlat.gitBranch);
 			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
@@ -228,27 +254,17 @@ describe('report', () => {
 		it('disable inject context', async() => {
 			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
-			const dummyContext = {
-				githubOrganization: 'TestOrganizationOther',
-				githubRepository: 'test-repository-other',
-				githubWorkflow: 'test-workflow-other.yml',
-				githubRunId: 67890,
-				githubRunAttempt: 2,
-				gitBranch: 'test/branch/other',
-				gitSha: '1111111111111111111111111111111111111111'
-			};
-
-			const report = await finalize(logger, dummyContext, testInputsDisableInject);
+			const report = await finalize(logger, testOtherContext, testInputsDisableInject);
 			const { reportId, reportVersion, summary } = report;
 
 			expect(reportId).to.eq(testReportMinimal.reportId);
 			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContext.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContext.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContext.gitBranch);
+			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
 			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
