@@ -1,0 +1,69 @@
+name: Update Test Reporting (Node)
+on:
+  workflow_dispatch: # manual trigger
+  repository_dispatch: # repository trigger
+    types:
+      - test-reporting-node-release
+env:
+  FORCE_COLOR: 3
+concurrency: update-test-reporting-node
+permissions:
+  contents: read
+jobs:
+  update:
+    name: Update Dependencies
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: Brightspace/third-party-actions@actions/checkout
+        with:
+          token: ${{secrets.PR_MANAGE_TOKEN}}
+      - name: Set up node
+        uses: Brightspace/third-party-actions@actions/setup-node
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install dependencies
+        run: |
+          npm ci
+          npm i -g npm-check-updates
+      - name: Get current version
+        id: current
+        run: |
+          VERSION=$(
+            npm ls --depth=0 -j d2l-test-reporting |
+            jq -r '.dependencies."d2l-test-reporting".version'
+          )
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Update test reporting
+        run: |
+          npm up d2l-test-reporting
+          ncu d2l-test-reporting -u
+          npm i
+      - name: Get new version
+        id: new
+        run: |
+          VERSION=$(
+            npm ls --depth=0 -j d2l-test-reporting |
+            jq -r '.dependencies."d2l-test-reporting".version'
+          )
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Build
+        if: steps.current.outputs.version != steps.new.outputs.version
+        run: npm run build
+      - name: Handle changes
+        uses: Brightspace/third-party-actions@peter-evans/create-pull-request
+        if: steps.current.outputs.version != steps.new.outputs.version
+        with:
+          token: ${{secrets.PR_MANAGE_TOKEN}}
+          commit-message: Update `d2l-test-reporting` to `${{steps.pkg.outputs.version}}`
+          branch: ghworkflow/update-test-reporting-node
+          title: Update `d2l-test-reporting` to `${{steps.pkg.outputs.version}}`
+          body: Update `d2l-test-reporting` to `${{steps.pkg.outputs.version}}`
+          reviewers: '@Brightspace/quality-enablement-reviewers'
+          delete-branch: true
+          add-paths: |
+            dist/*
+            package.json
+            package-lock.json

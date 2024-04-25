@@ -58,20 +58,15 @@ jobs:
         uses: Brightspace/third-party-actions@peter-evans/create-pull-request
         id: changes
         with:
-          token: ${{github.token}}
           commit-message: Update Build
-          committer: ${{env.GIT_USER}} <${{env.GIT_EMAIL}}>
-          add-paths: dist/*
-          author: ${{env.GIT_USER}} <${{env.GIT_EMAIL}}>
           base: ${{github.event.pull_request.head.ref}}
           branch: ghworkflow/update-build-for-pr-${{github.event.number}}
           title: Update Build for PR ${{github.event.number}}
           body: 'Update build for PR #${{github.event.number}}.'
+          reviewers: '@Brightspace/quality-enablement-reviewers'
           delete-branch: true
           draft: true
-        env:
-          GIT_USER: github-actions[bot]
-          GIT_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          add-paths: dist/*
       - name: Leave comment
         if: steps.changes.outputs.pull-request-operation == 'created'
         uses: BrightspaceUI/actions/comment-on-pr@main
