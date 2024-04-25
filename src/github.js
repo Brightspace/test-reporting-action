@@ -45,7 +45,7 @@ const getContext = (logger) => {
 	return context;
 };
 
-const getInputs = async(logger) => {
+const getInputs = async (logger) => {
 	logger.startGroup('Gather GitHub inputs');
 	logger.info('Gather credentials');
 
@@ -121,10 +121,10 @@ const updateSummary = (logger, context, inputs) => {
 
 	const overviewHref = new URL('', testReportingUrl);
 	const { searchParams: overviewSearchParams } = overviewHref;
-	const { githubOrganization, githubRepository } = context;
+	const { github: { organization, repository } } = context;
 
-	overviewSearchParams.set('var-githubOrganizations', githubOrganization);
-	overviewSearchParams.set('var-githubRepositories', githubRepository);
+	overviewSearchParams.set('var-githubOrganizations', organization);
+	overviewSearchParams.set('var-githubRepositories', repository);
 
 	summary.addLink('here', overviewHref.toString());
 	summary.addEOL();
@@ -134,8 +134,8 @@ const updateSummary = (logger, context, inputs) => {
 
 	const { searchParams: drillDownSearchParams } = testReportingDrillDown;
 
-	drillDownSearchParams.set('var-githubOrganizations', githubOrganization);
-	drillDownSearchParams.set('var-githubRepositories', githubRepository);
+	drillDownSearchParams.set('var-githubOrganizations', organization);
+	drillDownSearchParams.set('var-githubRepositories', repository);
 
 	summary.addLink('here', testReportingDrillDown.toString());
 	summary.addEOL();

@@ -270,7 +270,7 @@ const submit = async(logger, context, inputs, report) => {
 	let credentials;
 
 	try {
-		const { githubOrganization, githubRepository } = context;
+		const { github: { organization, repository } } = context;
 		const {
 			awsAccessKeyId: accessKeyId,
 			awsSecretAccessKey: secretAccessKey,
@@ -284,8 +284,8 @@ const submit = async(logger, context, inputs, report) => {
 			`test-reporting-${(new Date()).getTime()}`,
 			3600, // 1 hour
 			[
-				{ Key: 'Org', Value: githubOrganization },
-				{ Key: 'Repo', Value: githubRepository }
+				{ Key: 'Org', Value: organization },
+				{ Key: 'Repo', Value: repository }
 			]
 		);
 	} catch ({ message }) {
