@@ -12,7 +12,7 @@ const getStringInput = (name, { required = true, lowerCase = false } = {}) => {
 	const input = getInput(name, { required });
 
 	if (input === '' && required) {
-		throw new Error(`input '${name}' must be a non-empty string`);
+		throw new Error(`Input '${name}' must be a non-empty string`);
 	}
 
 	return lowerCase ? input.toLowerCase() : input;
@@ -26,16 +26,20 @@ const getContext = (logger) => {
 	try {
 		context = getGitHubContext();
 	} catch {
-		throw new Error('unable to gather github context');
+		throw new Error('Unable to gather github context');
 	}
 
-	logger.info(`GitHub organization: ${context.githubOrganization}`);
-	logger.info(`GitHub repository: ${context.githubRepository}`);
-	logger.info(`GitHub workflow: ${context.githubWorkflow}`);
-	logger.info(`GitHub run ID: ${context.githubRunId}`);
-	logger.info(`GitHub run attempt: ${context.githubRunAttempt}`);
-	logger.info(`Git branch: ${context.gitBranch}`);
-	logger.info(`Git SHA: ${context.gitSha}`);
+	const { github, git } = context;
+	const { organization, repository, workflow, runId, runAttempt } = github;
+	const { branch, sha } = git;
+
+	logger.info(`GitHub organization: ${organization}`);
+	logger.info(`GitHub repository: ${repository}`);
+	logger.info(`GitHub workflow: ${workflow}`);
+	logger.info(`GitHub run ID: ${runId}`);
+	logger.info(`GitHub run attempt: ${runAttempt}`);
+	logger.info(`Git branch: ${branch}`);
+	logger.info(`Git SHA: ${sha}`);
 	logger.endGroup();
 
 	return context;
@@ -56,7 +60,7 @@ const getInputs = async(logger) => {
 	try {
 		await fs.access(reportPath);
 	} catch {
-		throw new Error('report path must exists');
+		throw new Error('Report path must exists');
 	}
 
 	logger.info(`Report path: ${reportPath}`);
@@ -82,7 +86,7 @@ const getInputs = async(logger) => {
 	const injectGitHubContext = getStringInput('inject-github-context', { lowerCase: true });
 
 	if (!['auto', 'force', 'off'].includes(injectGitHubContext)) {
-		throw new Error('inject context mode invalid');
+		throw new Error('Inject context mode invalid');
 	}
 
 	logger.info(`Inject context mode: ${injectGitHubContext}`);

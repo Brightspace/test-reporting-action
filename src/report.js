@@ -1,8 +1,6 @@
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { MeasureValueType, TimestreamWriteClient, TimeUnit, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
-import fs from 'fs/promises';
-import { validateContext } from 'd2l-test-reporting/helpers/github.js';
-import { validateReport } from 'd2l-test-reporting/helpers/report.js';
+import { Report } from 'd2l-test-reporting/helpers/report.js';
 
 const region = 'us-east-1';
 const databaseName = 'test_reporting';
@@ -181,101 +179,62 @@ const writeTimestream = async(region, credentials, requests) => {
 	}
 };
 
-const processGitHubContext = (logger, context, inputs, report) => {
-	const { injectGitHubContext } = inputs;
-	const { summary = {} } = report;
-
-	if (injectGitHubContext === 'force') {
-		logger.info('Inject GitHub context');
-
-		report.summary = {
-			...summary,
-			...context
-		};
-	} else {
-		try {
-			validateContext(summary);
-		} catch {
-			if (injectGitHubContext === 'auto') {
-				logger.warning('GitHub context missing, incomplete or invalid');
-				logger.info('Inject GitHub context');
-
-				report.summary = {
-					...summary,
-					...context
-				};
-			} else if (injectGitHubContext === 'off') {
-				throw new Error('GitHub context missing, incomplete or invalid');
-			} else {
-				throw new Error('Unknown GitHub context injection mode');
-			}
-		}
-	}
-
-	return report;
-};
-
-const processLmsInfo = (inputs, report) => {
-	const { lmsBuildNumber, lmsInstanceUrl } = inputs;
-
-	report.summary = report.summary ?? {};
-
-	if (lmsBuildNumber) {
-		if (!report.summary.lmsBuildNumber) {
-			report.summary.lmsBuildNumber = lmsBuildNumber;
-		} else {
-			throw new Error('LMS build number already present, will not override');
-		}
-	}
-
-	if (lmsInstanceUrl) {
-		if (!report.summary.lmsInstanceUrl) {
-			report.summary.lmsInstanceUrl = lmsInstanceUrl;
-		} else {
-			throw new Error('LMS instance URL already present, will not override');
-		}
-	}
-
-	return report;
-};
-
 const finalize = async(logger, context, inputs) => {
 	logger.startGroup('Finalize test report');
 
-	const { reportPath, debug } = inputs;
-	let report;
+	const { reportPath, injectGitHubContext, lmsBuildNumber, lmsInstanceUrl, debug } = inputs;
+	const lmsInfo = {};
 
-	try {
-		const reportRaw = await fs.readFile(reportPath, 'utf8');
-
-		report = JSON.parse(reportRaw);
-	} catch {
-		throw new Error('report is not valid');
+	if (lmsBuildNumber) {
+		lmsInfo.buildNumber = lmsBuildNumber;
 	}
+
+	if (lmsInstanceUrl) {
+		lmsInfo.instanceUrl = lmsInstanceUrl;
+	}
+
+	let reportOptions = { lmsInfo };
+
+	if (injectGitHubContext === 'force') {
+		logger.info('Forcefully inject GitHub context');
+
+		reportOptions = {
+			...reportOptions,
+			context,
+			overrideContext: true
+		};
+	} else if (injectGitHubContext === 'auto') {
+		logger.info('Allow injection of GitHub context');
+
+		reportOptions = {
+			...reportOptions,
+			context
+		};
+	} else {
+		logger.info('Not injecting GitHub context');
+	}
+
+	const report = new Report(reportPath, reportOptions);
 
 	if (debug) {
 		logger.info('Loaded report\n');
 		logger.info(`${JSON.stringify(report, null, 2)}\n`);
 	}
 
-	report = processGitHubContext(logger, context, inputs, report);
-	report = processLmsInfo(inputs, report);
+	logger.info(`Report ID: ${report.getId()}`);
 
-	if (debug) {
-		logger.info('Finalized report\n');
-		logger.info(`${JSON.stringify(report, null, 2)}\n`);
+	const originalVersion = report.getVersionOriginal();
+	const version = report.getVersion();
+
+	if (originalVersion !== version) {
+		logger.info(`Report Version: ${version} (Upgrade from ${originalVersion})`);
+	} else {
+		logger.info(`Report Version: ${version}`);
 	}
 
-	logger.info('Validate schema');
-
-	validateReport(report);
-
-	const { reportId } = report;
-
-	logger.info(`Report ID: ${reportId}`);
 	logger.endGroup();
 
-	return report;
+	return report.toJSON();
 };
 
 const submit = async(logger, context, inputs, report) => {

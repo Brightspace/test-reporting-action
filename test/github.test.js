@@ -59,13 +59,17 @@ describe('github', () => {
 
 	describe('get context', () => {
 		const expectedResult = {
-			githubOrganization: 'TestOrganization',
-			githubRepository: 'test-repository',
-			githubWorkflow: 'test-workflow.yml',
-			githubRunId: 12345,
-			githubRunAttempt: 1,
-			gitBranch: 'test/branch',
-			gitSha: '0000000000000000000000000000000000000000'
+			github: {
+				organization: 'TestOrganization',
+				repository: 'test-repository',
+				workflow: 'test-workflow.yml',
+				runId: 12345,
+				runAttempt: 1
+			},
+			git: {
+				branch: 'test/branch',
+				sha: '0000000000000000000000000000000000000000'
+			}
 		};
 		const expectedInfoLines = [
 			'GitHub organization: TestOrganization',
@@ -82,66 +86,66 @@ describe('github', () => {
 			logger = makeDummyLogger();
 		});
 
-		it('pull request', () => {
-			sandbox.stub(process, 'env').value({
-				'GITHUB_ACTIONS': '1',
-				'GITHUB_HEAD_REF': 'refs/heads/test/branch',
-				'GITHUB_REF': 'refs/heads/test/branch',
-				'GITHUB_REPOSITORY': 'TestOrganization/test-repository',
-				'GITHUB_RUN_ATTEMPT': '1',
-				'GITHUB_RUN_ID': '12345',
-				'GITHUB_SHA': '0000000000000000000000000000000000000000',
-				'GITHUB_WORKFLOW_REF': 'TestOrganization/test-repository/.github/workflows/test-workflow.yml@test/branch'
+		describe('in github actions', () => {
+			it('pull request', () => {
+				sandbox.stub(process, 'env').value({
+					'GITHUB_ACTIONS': '1',
+					'GITHUB_HEAD_REF': 'refs/heads/test/branch',
+					'GITHUB_REF': 'refs/heads/test/branch',
+					'GITHUB_REPOSITORY': 'TestOrganization/test-repository',
+					'GITHUB_RUN_ATTEMPT': '1',
+					'GITHUB_RUN_ID': '12345',
+					'GITHUB_SHA': '0000000000000000000000000000000000000000',
+					'GITHUB_WORKFLOW_REF': 'TestOrganization/test-repository/.github/workflows/test-workflow.yml@test/branch'
+				});
+
+				const context = getContext(logger);
+
+				expect(expectedResult).to.deep.eq(context);
+				expect(logger.startGroup.calledOnce).to.be.true;
+				expect(logger.endGroup.calledOnce).to.be.true;
+				expect(logger.info.callCount).to.eq(7);
+				expect(logger.error.notCalled).to.be.true;
+				expect(logger.startGroup.calledWith('Gather GitHub context')).to.be.true;
+
+				for (const i in expectedInfoLines) {
+					expect(logger.info.calledWith(expectedInfoLines[i])).to.be.true;
+				}
 			});
 
-			const context = getContext(logger);
+			it('branch', () => {
+				sandbox.stub(process, 'env').value({
+					'GITHUB_ACTIONS': '1',
+					'GITHUB_REF': 'refs/heads/test/branch',
+					'GITHUB_REPOSITORY': 'TestOrganization/test-repository',
+					'GITHUB_RUN_ATTEMPT': '1',
+					'GITHUB_RUN_ID': '12345',
+					'GITHUB_SHA': '0000000000000000000000000000000000000000',
+					'GITHUB_WORKFLOW_REF': 'TestOrganization/test-repository/.github/workflows/test-workflow.yml@test/branch'
+				});
 
-			expect(expectedResult).to.deep.eq(context);
-			expect(logger.startGroup.calledOnce).to.be.true;
-			expect(logger.endGroup.calledOnce).to.be.true;
-			expect(logger.info.callCount).to.eq(7);
-			expect(logger.error.notCalled).to.be.true;
-			expect(logger.startGroup.calledWith('Gather GitHub context')).to.be.true;
+				const context = getContext(logger);
 
-			for (const i in expectedInfoLines) {
-				expect(logger.info.calledWith(expectedInfoLines[i])).to.be.true;
-			}
+				expect(expectedResult).to.deep.eq(context);
+				expect(logger.startGroup.calledOnce).to.be.true;
+				expect(logger.endGroup.calledOnce).to.be.true;
+				expect(logger.info.callCount).to.eq(7);
+				expect(logger.error.notCalled).to.be.true;
+				expect(logger.startGroup.calledWith('Gather GitHub context')).to.be.true;
+
+				for (const i in expectedInfoLines) {
+					expect(logger.info.calledWith(expectedInfoLines[i])).to.be.true;
+				}
+			});
 		});
 
-		it('branch', () => {
-			sandbox.stub(process, 'env').value({
-				'GITHUB_ACTIONS': '1',
-				'GITHUB_REF': 'refs/heads/test/branch',
-				'GITHUB_REPOSITORY': 'TestOrganization/test-repository',
-				'GITHUB_RUN_ATTEMPT': '1',
-				'GITHUB_RUN_ID': '12345',
-				'GITHUB_SHA': '0000000000000000000000000000000000000000',
-				'GITHUB_WORKFLOW_REF': 'TestOrganization/test-repository/.github/workflows/test-workflow.yml@test/branch'
-			});
+		it('not in github actions', () => {
+			sandbox.stub(process, 'env').value({});
 
-			const context = getContext(logger);
+			const logger = makeDummyLogger();
+			const wrapper = () => getContext(logger);
 
-			expect(expectedResult).to.deep.eq(context);
-			expect(logger.startGroup.calledOnce).to.be.true;
-			expect(logger.endGroup.calledOnce).to.be.true;
-			expect(logger.info.callCount).to.eq(7);
-			expect(logger.error.notCalled).to.be.true;
-			expect(logger.startGroup.calledWith('Gather GitHub context')).to.be.true;
-
-			for (const i in expectedInfoLines) {
-				expect(logger.info.calledWith(expectedInfoLines[i])).to.be.true;
-			}
-		});
-
-		describe('fails', () => {
-			it('not in github actions', () => {
-				sandbox.stub(process, 'env').value({});
-
-				const logger = makeDummyLogger();
-				const wrapper = () => getContext(logger);
-
-				expect(wrapper).to.throw('unable to gather github context');
-			});
+			expect(wrapper).to.throw('Unable to gather github context');
 		});
 	});
 
@@ -208,79 +212,77 @@ describe('github', () => {
 			expect(inputs.debug).to.be.true;
 		});
 
-		describe('fails', () => {
-			it('empty input', async() => {
-				sandbox.stub(process, 'env').value({
-					'INPUT_AWS-ACCESS-KEY-ID': ' ',
-					'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
-					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
-					'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
-					'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
-					'INPUT_DRY-RUN': 'true',
-					'INPUT_DEBUG': 'true'
-				});
-
-				try {
-					const logger = makeDummyLogger();
-
-					await getInputs(logger);
-				} catch ({ message }) {
-					expect(message).to.contain('must be a non-empty string');
-
-					return;
-				}
-
-				throw new Error('failed');
+		it('empty input', async() => {
+			sandbox.stub(process, 'env').value({
+				'INPUT_AWS-ACCESS-KEY-ID': ' ',
+				'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
+				'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
+				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
+				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+				'INPUT_DRY-RUN': 'true',
+				'INPUT_DEBUG': 'true'
 			});
 
-			it('non-existent report path', async() => {
-				sandbox.stub(process, 'env').value({
-					'INPUT_AWS-ACCESS-KEY-ID': 'aws-access-key-id',
-					'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
-					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
-					'INPUT_REPORT-PATH': 'not a file',
-					'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
-					'INPUT_DRY-RUN': 'true',
-					'INPUT_DEBUG': 'true'
-				});
+			try {
+				const logger = makeDummyLogger();
 
-				try {
-					const logger = makeDummyLogger();
+				await getInputs(logger);
+			} catch ({ message }) {
+				expect(message).to.contain('must be a non-empty string');
 
-					await getInputs(logger);
-				} catch ({ message }) {
-					expect(message).to.eq('report path must exists');
+				return;
+			}
 
-					return;
-				}
+			throw new Error('failed');
+		});
 
-				throw new Error('failed');
+		it('non-existent report path', async() => {
+			sandbox.stub(process, 'env').value({
+				'INPUT_AWS-ACCESS-KEY-ID': 'aws-access-key-id',
+				'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
+				'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
+				'INPUT_REPORT-PATH': 'not a file',
+				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+				'INPUT_DRY-RUN': 'true',
+				'INPUT_DEBUG': 'true'
 			});
 
-			it('invalid injection mode', async() => {
-				sandbox.stub(fs, 'access');
-				sandbox.stub(process, 'env').value({
-					'INPUT_AWS-ACCESS-KEY-ID': 'aws-access-key-id',
-					'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
-					'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
-					'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
-					'INPUT_INJECT-GITHUB-CONTEXT': 'bad',
-					'INPUT_DRY-RUN': 'true',
-					'INPUT_DEBUG': 'true'
-				});
+			try {
+				const logger = makeDummyLogger();
 
-				try {
-					const logger = makeDummyLogger();
+				await getInputs(logger);
+			} catch ({ message }) {
+				expect(message).to.eq('Report path must exists');
 
-					await getInputs(logger);
-				} catch ({ message }) {
-					expect(message).to.eq('inject context mode invalid');
+				return;
+			}
 
-					return;
-				}
+			throw new Error('failed');
+		});
 
-				throw new Error('failed');
+		it('invalid injection mode', async() => {
+			sandbox.stub(fs, 'access');
+			sandbox.stub(process, 'env').value({
+				'INPUT_AWS-ACCESS-KEY-ID': 'aws-access-key-id',
+				'INPUT_AWS-SECRET-ACCESS-KEY': 'aws-secret-access-key',
+				'INPUT_AWS-SESSION-TOKEN': 'aws-session-token',
+				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
+				'INPUT_INJECT-GITHUB-CONTEXT': 'bad',
+				'INPUT_DRY-RUN': 'true',
+				'INPUT_DEBUG': 'true'
 			});
+
+			try {
+				const logger = makeDummyLogger();
+
+				await getInputs(logger);
+			} catch ({ message }) {
+				expect(message).to.eq('Inject context mode invalid');
+
+				return;
+			}
+
+			throw new Error('failed');
 		});
 	});
 });

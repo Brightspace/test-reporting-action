@@ -3,7 +3,7 @@ import { finalize, submit } from '../src/report.js';
 import { TimestreamWriteClient, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
 import { createSandbox } from 'sinon';
 import { expect } from 'chai';
-import fs from 'fs/promises';
+import fs from 'fs';
 import { mockClient } from 'aws-sdk-client-mock';
 
 const testContext = {
@@ -24,12 +24,23 @@ const testInputsNoLmsInfo = {
 	awsSecretAccessKey: 'test-secret-access-key',
 	awsSessionToken: 'test-session-token',
 	injectGitHubContext: 'auto',
+	reportPath: './d2l-test-report.json',
 	dryRun: false,
 	debug: true
 };
 const testInputsFull = {
 	...testInputsNoLmsInfo,
 	...lmsInfo
+};
+const testInputsForceInject = {
+	...testInputsNoLmsInfo,
+	...lmsInfo,
+	injectGitHubContext: 'force'
+};
+const testInputsDisableInject = {
+	...testInputsNoLmsInfo,
+	...lmsInfo,
+	injectGitHubContext: 'off'
 };
 const testReportMinimal = {
 	reportId: '00000000-0000-0000-0000-000000000000',
@@ -131,7 +142,7 @@ describe('report', () => {
 
 	describe('finalize', () => {
 		it('minimal', async() => {
-			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportMinimal));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportMinimal));
 
 			const report = await finalize(logger, testContext, testInputsFull);
 			const { reportId, reportVersion, summary } = report;
@@ -149,7 +160,7 @@ describe('report', () => {
 		});
 
 		it('no lms info', async() => {
-			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportNoLmsInfo));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
 			const report = await finalize(logger, testContext, testInputsFull);
 			const { reportId, reportVersion, summary } = report;
@@ -168,7 +179,7 @@ describe('report', () => {
 		});
 
 		it('full', async() => {
-			sandbox.stub(fs, 'readFile').resolves(JSON.stringify(testReportFull));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportFull));
 
 			const report = await finalize(logger, testContext, testInputsNoLmsInfo);
 			const { reportId, reportVersion, summary } = report;
@@ -186,14 +197,70 @@ describe('report', () => {
 			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
+		it('force inject context', async() => {
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
+
+			const dummyContext = {
+				githubOrganization: 'TestOrganizationOther',
+				githubRepository: 'test-repository-other',
+				githubWorkflow: 'test-workflow-other.yml',
+				githubRunId: 67890,
+				githubRunAttempt: 2,
+				gitBranch: 'test/branch/other',
+				gitSha: '1111111111111111111111111111111111111111'
+			};
+
+			const report = await finalize(logger, dummyContext, testInputsForceInject);
+			const { reportId, reportVersion, summary } = report;
+
+			expect(reportId).to.eq(testReportMinimal.reportId);
+			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
+			expect(summary.githubOrganization).to.eq(dummyContext.githubOrganization);
+			expect(summary.githubRepository).to.eq(dummyContext.githubRepository);
+			expect(summary.githubWorkflow).to.eq(dummyContext.githubWorkflow);
+			expect(summary.githubRunId).to.eq(dummyContext.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(dummyContext.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(dummyContext.gitBranch);
+			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+		});
+
+		it('disable inject context', async() => {
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
+
+			const dummyContext = {
+				githubOrganization: 'TestOrganizationOther',
+				githubRepository: 'test-repository-other',
+				githubWorkflow: 'test-workflow-other.yml',
+				githubRunId: 67890,
+				githubRunAttempt: 2,
+				gitBranch: 'test/branch/other',
+				gitSha: '1111111111111111111111111111111111111111'
+			};
+
+			const report = await finalize(logger, dummyContext, testInputsDisableInject);
+			const { reportId, reportVersion, summary } = report;
+
+			expect(reportId).to.eq(testReportMinimal.reportId);
+			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
+			expect(summary.githubOrganization).to.eq(testContext.githubOrganization);
+			expect(summary.githubRepository).to.eq(testContext.githubRepository);
+			expect(summary.githubWorkflow).to.eq(testContext.githubWorkflow);
+			expect(summary.githubRunId).to.eq(testContext.githubRunId);
+			expect(summary.githubRunAttempt).to.eq(testContext.githubRunAttempt);
+			expect(summary.gitBranch).to.eq(testContext.gitBranch);
+			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+		});
+
 		describe('fails', () => {
 			it('file read', async() => {
-				sandbox.stub(fs, 'readFile').throws();
+				sandbox.stub(fs, 'readFileSync').throws();
 
 				try {
 					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
-					expect(message).to.contain('report is not valid');
+					expect(message).to.contain('Unable to read/parse report');
 
 					return;
 				}
@@ -202,12 +269,12 @@ describe('report', () => {
 			});
 
 			it('not json', async() => {
-				sandbox.stub(fs, 'readFile').resolves('this is not json');
+				sandbox.stub(fs, 'readFileSync').returns('this is not json');
 
 				try {
 					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
-					expect(message).to.contain('report is not valid');
+					expect(message).to.contain('Unable to read/parse report');
 
 					return;
 				}
@@ -216,12 +283,12 @@ describe('report', () => {
 			});
 
 			it('validation', async() => {
-				sandbox.stub(fs, 'readFile').resolves('{}');
+				sandbox.stub(fs, 'readFileSync').returns('{}');
 
 				try {
 					await finalize(logger, testContext, testInputsFull);
 				} catch ({ message }) {
-					expect(message).to.contain('report does not conform to schema');
+					expect(message).to.contain('Unable to determine report version');
 
 					return;
 				}
@@ -239,7 +306,7 @@ describe('report', () => {
 						}
 					};
 
-					sandbox.stub(fs, 'readFile').resolves(JSON.stringify(report));
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(report));
 
 					try {
 						await finalize(logger, testContext, testInputsFull);
@@ -261,7 +328,7 @@ describe('report', () => {
 						}
 					};
 
-					sandbox.stub(fs, 'readFile').resolves(JSON.stringify(report));
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(report));
 
 					try {
 						await finalize(logger, testContext, testInputsFull);
