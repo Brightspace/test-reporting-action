@@ -22,7 +22,7 @@
     "@actions/core": "^1",
     "@aws-sdk/client-sts": "^3",
     "@aws-sdk/client-timestream-write": "^3",
-    "d2l-test-reporting": "^2"
+    "d2l-test-reporting": "^2.1.0"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38",
