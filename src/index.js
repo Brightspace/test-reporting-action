@@ -5,21 +5,14 @@ import { finalize, submit } from './report.js';
 	const logger = makeLogger();
 
 	try {
-		const context = getContext(logger);
+		const executionContext = getContext(logger);
 		const inputs = await getInputs(logger);
-		const report = await finalize(logger, context, inputs);
+		const report = await finalize(logger, executionContext, inputs);
+		const reportContext = report.getContext();
 
-		await submit(logger, context, inputs, report);
+		await submit(logger, executionContext, inputs, report);
 
-		const { summary: { githubOrganization, githubRepository } } = report;
-		const processedContext = {
-			github: {
-				organization: githubOrganization,
-				repository: githubRepository
-			}
-		};
-
-		updateSummary(logger, processedContext, inputs);
+		updateSummary(logger, reportContext, inputs);
 	} catch ({ message }) {
 		setFailed(message);
 
