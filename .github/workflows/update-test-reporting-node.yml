@@ -57,10 +57,10 @@ jobs:
         if: steps.current.outputs.version != steps.new.outputs.version
         with:
           token: ${{secrets.PR_MANAGE_TOKEN}}
-          commit-message: Update `d2l-test-reporting` to `${{steps.pkg.outputs.version}}`
+          commit-message: Update `d2l-test-reporting` to `${{steps.new.outputs.version}}`
           branch: ghworkflow/update-test-reporting-node
-          title: Update `d2l-test-reporting` to `${{steps.pkg.outputs.version}}`
-          body: Update `d2l-test-reporting` to `${{steps.pkg.outputs.version}}`
+          title: Update `d2l-test-reporting` to `${{steps.new.outputs.version}}`
+          body: Update `d2l-test-reporting` to `${{steps.new.outputs.version}}`
           reviewers: '@Brightspace/quality-enablement-reviewers'
           delete-branch: true
           add-paths: |
