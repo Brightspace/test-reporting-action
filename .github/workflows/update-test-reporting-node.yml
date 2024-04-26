@@ -11,7 +11,7 @@ permissions:
   contents: read
 jobs:
   update:
-    name: Update Dependencies
+    name: Update Test Reporting (Node)
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
