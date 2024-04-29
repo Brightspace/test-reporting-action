@@ -5,6 +5,7 @@ import { createSandbox } from 'sinon';
 import { expect } from 'chai';
 import fs from 'fs';
 import { mockClient } from 'aws-sdk-client-mock';
+import { Report } from 'd2l-test-reporting/helpers/report.js';
 
 const testContext = {
 	github: {
@@ -32,25 +33,6 @@ const testOtherContext = {
 		sha: '1111111111111111111111111111111111111111'
 	}
 };
-const testContextFlat = {
-	githubOrganization: testContext.github.organization,
-	githubRepository: testContext.github.repository,
-	githubWorkflow: testContext.github.workflow,
-	githubRunId: testContext.github.runId,
-	githubRunAttempt: testContext.github.runAttempt,
-	gitBranch: testContext.git.branch,
-	gitSha: testContext.git.sha
-};
-const testOtherContextFlat = {
-	githubOrganization: testOtherContext.github.organization,
-	githubRepository: testOtherContext.github.repository,
-	githubWorkflow: testOtherContext.github.workflow,
-	githubRunId: testOtherContext.github.runId,
-	githubRunAttempt: testOtherContext.github.runAttempt,
-	gitBranch: testOtherContext.git.branch,
-	gitSha: testOtherContext.git.sha
-};
-
 const lmsInfo = {
 	lmsBuildNumber: '20.24.1.12345',
 	lmsInstanceUrl: 'https://cd2024112345.devlms.desire2learn.com'
@@ -78,7 +60,7 @@ const testInputsDisableInject = {
 	...lmsInfo,
 	injectGitHubContext: 'off'
 };
-const testReportMinimal = {
+const testReportV1Minimal = {
 	reportId: '00000000-0000-0000-0000-000000000000',
 	reportVersion: 1,
 	summary: {
@@ -118,14 +100,20 @@ const testReportMinimal = {
 		retries: 0
 	}]
 };
-const testReportNoLmsInfo = {
-	reportId: testReportMinimal.reportId,
-	reportVersion: testReportMinimal.reportVersion,
+const testReportV1NoLmsInfo = {
+	reportId: testReportV1Minimal.reportId,
+	reportVersion: testReportV1Minimal.reportVersion,
 	summary: {
-		...testContextFlat,
-		...testReportMinimal.summary
+		...testReportV1Minimal.summary,
+		githubOrganization: testContext.github.organization,
+		githubRepository: testContext.github.repository,
+		githubWorkflow: testContext.github.workflow,
+		githubRunId: testContext.github.runId,
+		githubRunAttempt: testContext.github.runAttempt,
+		gitBranch: testContext.git.branch,
+		gitSha: testContext.git.sha
 	},
-	details: testReportMinimal.details.map(detail => ({
+	details: testReportV1Minimal.details.map(detail => ({
 		...detail,
 		browser: 'chromium',
 		type: 'unit',
@@ -133,15 +121,13 @@ const testReportNoLmsInfo = {
 		experience: 'Experience'
 	}))
 };
-const testReportFull = {
-	reportId: testReportMinimal.reportId,
-	reportVersion: testReportMinimal.reportVersion,
+const testReportV1Full = {
+	...testReportV1NoLmsInfo,
 	summary: {
-		...testContextFlat,
-		...lmsInfo,
-		...testReportMinimal.summary
+		...testReportV1NoLmsInfo.summary,
+		...lmsInfo
 	},
-	details: testReportMinimal.details.map(detail => ({
+	details: testReportV1NoLmsInfo.details.map(detail => ({
 		...detail,
 		browser: 'chromium',
 		type: 'unit',
@@ -156,14 +142,6 @@ const testAwsStsCredentials = {
 		SecretAccessKey: 'test-secret-access-key',
 		SessionToken: 'test-session-token'
 	}
-};
-
-const makeDummyReport = (report) => {
-	return {
-		toJSON() {
-			return report;
-		}
-	};
 };
 
 describe('report', () => {
@@ -186,95 +164,98 @@ describe('report', () => {
 
 	describe('finalize', () => {
 		it('minimal', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportMinimal));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1Minimal));
 
 			const report = await finalize(logger, testContext, testInputsFull);
-			const { reportId, reportVersion, summary } = report.toJSON();
+			const { id, version, summary } = report.toJSON();
 
-			expect(reportId).to.eq(testReportMinimal.reportId);
-			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
-			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+			expect(id).to.eq(testReportV1Minimal.reportId);
+			expect(version).to.eq(2);
+			expect(summary.github.organization).to.eq(testContext.github.organization);
+			expect(summary.github.repository).to.eq(testContext.github.repository);
+			expect(summary.github.workflow).to.eq(testContext.github.workflow);
+			expect(summary.github.runId).to.eq(testContext.github.runId);
+			expect(summary.github.runAttempt).to.eq(testContext.github.runAttempt);
+			expect(summary.git.branch).to.eq(testContext.git.branch);
+			expect(summary.git.sha).to.eq(testContext.git.sha);
+			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		it('no lms info', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
 			const report = await finalize(logger, testContext, testInputsFull);
-			const { reportId, reportVersion, summary } = report.toJSON();
+			const { id, version, summary } = report.toJSON();
 
-			expect(reportId).to.eq(testReportMinimal.reportId);
-			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
-			expect(summary.gitSha).to.eq(testContextFlat.gitSha);
-			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+			expect(id).to.eq(testReportV1NoLmsInfo.reportId);
+			expect(version).to.eq(2);
+			expect(summary.github.organization).to.eq(testContext.github.organization);
+			expect(summary.github.repository).to.eq(testContext.github.repository);
+			expect(summary.github.workflow).to.eq(testContext.github.workflow);
+			expect(summary.github.runId).to.eq(testContext.github.runId);
+			expect(summary.github.runAttempt).to.eq(testContext.github.runAttempt);
+			expect(summary.git.branch).to.eq(testContext.git.branch);
+			expect(summary.git.sha).to.eq(testContext.git.sha);
+			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		it('full', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportFull));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1Full));
 
 			const report = await finalize(logger, testContext, testInputsNoLmsInfo);
-			const { reportId, reportVersion, summary } = report.toJSON();
+			const { id, version, summary } = report.toJSON();
 
-			expect(reportId).to.eq(testReportMinimal.reportId);
-			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
-			expect(summary.gitSha).to.eq(testContextFlat.gitSha);
-			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+			expect(id).to.eq(testReportV1Full.reportId);
+			expect(version).to.eq(2);
+			expect(summary.github.organization).to.eq(testContext.github.organization);
+			expect(summary.github.repository).to.eq(testContext.github.repository);
+			expect(summary.github.workflow).to.eq(testContext.github.workflow);
+			expect(summary.github.runId).to.eq(testContext.github.runId);
+			expect(summary.github.runAttempt).to.eq(testContext.github.runAttempt);
+			expect(summary.git.branch).to.eq(testContext.git.branch);
+			expect(summary.git.sha).to.eq(testContext.git.sha);
+			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		it('force inject context', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
 			const report = await finalize(logger, testOtherContext, testInputsForceInject);
-			const { reportId, reportVersion, summary } = report.toJSON();
+			const { id, version, summary } = report.toJSON();
 
-			expect(reportId).to.eq(testReportMinimal.reportId);
-			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testOtherContextFlat.githubOrganization);
-			expect(summary.githubRepository).to.eq(testOtherContextFlat.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testOtherContextFlat.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testOtherContextFlat.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testOtherContextFlat.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testOtherContextFlat.gitBranch);
-			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+			expect(id).to.eq(testReportV1NoLmsInfo.reportId);
+			expect(version).to.eq(2);
+			expect(summary.github.organization).to.eq(testOtherContext.github.organization);
+			expect(summary.github.repository).to.eq(testOtherContext.github.repository);
+			expect(summary.github.workflow).to.eq(testOtherContext.github.workflow);
+			expect(summary.github.runId).to.eq(testOtherContext.github.runId);
+			expect(summary.github.runAttempt).to.eq(testOtherContext.github.runAttempt);
+			expect(summary.git.branch).to.eq(testOtherContext.git.branch);
+			expect(summary.git.sha).to.eq(testOtherContext.git.sha);
+			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		it('disable inject context', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
 			const report = await finalize(logger, testOtherContext, testInputsDisableInject);
-			const { reportId, reportVersion, summary } = report.toJSON();
+			const { id, version, summary } = report.toJSON();
 
-			expect(reportId).to.eq(testReportMinimal.reportId);
-			expect(reportVersion).to.eq(testReportMinimal.reportVersion);
-			expect(summary.githubOrganization).to.eq(testContextFlat.githubOrganization);
-			expect(summary.githubRepository).to.eq(testContextFlat.githubRepository);
-			expect(summary.githubWorkflow).to.eq(testContextFlat.githubWorkflow);
-			expect(summary.githubRunId).to.eq(testContextFlat.githubRunId);
-			expect(summary.githubRunAttempt).to.eq(testContextFlat.githubRunAttempt);
-			expect(summary.gitBranch).to.eq(testContextFlat.gitBranch);
-			expect(summary.lmsBuildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lmsInstanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+			expect(id).to.eq(testReportV1NoLmsInfo.reportId);
+			expect(version).to.eq(2);
+			expect(summary.github.organization).to.eq(testContext.github.organization);
+			expect(summary.github.repository).to.eq(testContext.github.repository);
+			expect(summary.github.workflow).to.eq(testContext.github.workflow);
+			expect(summary.github.runId).to.eq(testContext.github.runId);
+			expect(summary.github.runAttempt).to.eq(testContext.github.runAttempt);
+			expect(summary.git.branch).to.eq(testContext.git.branch);
+			expect(summary.git.sha).to.eq(testContext.git.sha);
+			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
+			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
 		});
 
 		describe('fails', () => {
@@ -323,9 +304,9 @@ describe('report', () => {
 			describe('already present', () => {
 				it('lms build number', async() => {
 					const report = {
-						...testReportNoLmsInfo,
+						...testReportV1NoLmsInfo,
 						summary: {
-							...testReportNoLmsInfo.summary,
+							...testReportV1NoLmsInfo.summary,
 							lmsBuildNumber: lmsInfo.lmsBuildNumber
 						}
 					};
@@ -345,9 +326,9 @@ describe('report', () => {
 
 				it('lms instance url', async() => {
 					const report = {
-						...testReportNoLmsInfo,
+						...testReportV1NoLmsInfo,
 						summary: {
-							...testReportNoLmsInfo.summary,
+							...testReportV1NoLmsInfo.summary,
 							lmsInstanceUrl: lmsInfo.lmsInstanceUrl
 						}
 					};
@@ -365,7 +346,6 @@ describe('report', () => {
 					throw new Error('failed');
 				});
 			});
-
 		});
 	});
 
@@ -386,8 +366,9 @@ describe('report', () => {
 		it('full', async() => {
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1Full));
 
-			const report = makeDummyReport(testReportFull);
+			const report = new Report('dummy-report-path');
 
 			await submit(logger, testContext, testInputsFull, report);
 
@@ -402,8 +383,9 @@ describe('report', () => {
 			};
 
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1Full));
 
-			const report = makeDummyReport(testReportFull);
+			const report = new Report('dummy-report-path');
 
 			await submit(logger, testContext, dryRunInputs, report);
 
@@ -419,8 +401,9 @@ describe('report', () => {
 
 			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
 			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
-			const report = makeDummyReport(testReportNoLmsInfo);
+			const report = new Report('dummy-report-path');
 
 			await submit(logger, testContext, debugInputs, report);
 
@@ -432,8 +415,9 @@ describe('report', () => {
 			describe('invalid credentials', () => {
 				it('generic error', async() => {
 					stsClientMock.on(AssumeRoleCommand).rejects(new Error('failed'));
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
-					const report = makeDummyReport(testReportNoLmsInfo);
+					const report = new Report('dummy-report-path');
 
 					try {
 						await submit(logger, testContext, testInputsNoLmsInfo, report);
@@ -451,8 +435,9 @@ describe('report', () => {
 
 				it('permission error', async() => {
 					stsClientMock.on(AssumeRoleCommand).rejects(new Error('User: is not authorized to perform'));
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
-					const report = makeDummyReport(testReportNoLmsInfo);
+					const report = new Report('dummy-report-path');
 
 					try {
 						await submit(logger, testContext, testInputsNoLmsInfo, report);
@@ -474,8 +459,9 @@ describe('report', () => {
 				timestreamWriteClientMock
 					.on(WriteRecordsCommand)
 					.rejects(new Error('failed'));
+				sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
-				const report = makeDummyReport(testReportNoLmsInfo);
+				const report = new Report('dummy-report-path');
 
 				try {
 					await submit(logger, testContext, testInputsNoLmsInfo, report);
