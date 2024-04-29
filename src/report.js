@@ -8,47 +8,58 @@ const { BIGINT, VARCHAR, MULTI } = MeasureValueType;
 const { MILLISECONDS } = TimeUnit;
 
 const makeSummaryWriteRequest = (report) => {
-	const { reportId, summary } = report;
+	const { id, version, summary } = report;
 	const {
-		githubOrganization,
-		githubRepository,
-		githubWorkflow,
-		githubRunId,
-		githubRunAttempt,
-		gitBranch,
-		gitSha,
+		github: {
+			organization,
+			repository,
+			workflow,
+			runId,
+			runAttempt
+		},
+		git: {
+			branch,
+			sha
+		},
 		operatingSystem,
 		framework,
 		started,
-		totalDuration,
+		duration: {
+			total
+		},
 		status,
-		countPassed,
-		countFailed,
-		countSkipped,
-		countFlaky,
-		lmsBuildNumber,
-		lmsInstanceUrl
+		count: {
+			passed,
+			failed,
+			skipped,
+			flaky
+		},
+		lms
 	} = summary;
 
 	const dimensions = [
-		{ Name: 'report_id', Value: reportId },
-		{ Name: 'github_organization', Value: githubOrganization },
-		{ Name: 'github_repository', Value: githubRepository },
-		{ Name: 'github_workflow', Value: githubWorkflow },
-		{ Name: 'github_run_id', Value: `${githubRunId}` },
-		{ Name: 'github_run_attempt', Value: `${githubRunAttempt}` },
-		{ Name: 'git_branch', Value: gitBranch },
-		{ Name: 'git_sha', Value: gitSha },
+		{ Name: 'report_id', Value: id },
+		{ Name: 'github_organization', Value: organization },
+		{ Name: 'github_repository', Value: repository },
+		{ Name: 'github_workflow', Value: workflow },
+		{ Name: 'github_run_id', Value: runId.toString() },
+		{ Name: 'github_run_attempt', Value: runAttempt.toString() },
+		{ Name: 'git_branch', Value: branch },
+		{ Name: 'git_sha', Value: sha },
 		{ Name: 'operating_system', Value: operatingSystem },
 		{ Name: 'framework', Value: framework }
 	];
 
-	if (lmsBuildNumber) {
-		dimensions.push({ Name: 'lms_build_number', Value: lmsBuildNumber });
-	}
+	if (lms) {
+		const { buildNumber, instanceUrl } = lms;
 
-	if (lmsInstanceUrl) {
-		dimensions.push({ Name: 'lms_instance_url', Value: lmsInstanceUrl });
+		if (buildNumber) {
+			dimensions.push({ Name: 'lms_build_number', Value: buildNumber });
+		}
+
+		if (instanceUrl) {
+			dimensions.push({ Name: 'lms_instance_url', Value: instanceUrl });
+		}
 	}
 
 	return {
@@ -58,15 +69,18 @@ const makeSummaryWriteRequest = (report) => {
 			Version: 1,
 			Time: `${Date.parse(started)}`,
 			TimeUnit: MILLISECONDS,
-			MeasureName: 'overall_test_run',
+			MeasureName: `report_${version}_bc`,
 			MeasureValueType: MULTI,
 			MeasureValues: [
-				{ Name: 'total_duration', Value: `${totalDuration}`, Type: BIGINT },
+				// kept for backwards compat. Once all dashboards are updated will be removed
+				{ Name: 'total_duration', Value: total.toString(), Type: BIGINT },
+				/////////////////////////////////////////////////////////////////////////////
+				{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
 				{ Name: 'status', Value: status, Type: VARCHAR },
-				{ Name: 'count_passed', Value: `${countPassed}`, Type: BIGINT },
-				{ Name: 'count_failed', Value: `${countFailed}`, Type: BIGINT },
-				{ Name: 'count_skipped', Value: `${countSkipped}`, Type: BIGINT },
-				{ Name: 'count_flaky', Value: `${countFlaky}`, Type: BIGINT }
+				{ Name: 'count_passed', Value: passed.toString(), Type: BIGINT },
+				{ Name: 'count_failed', Value: failed.toString(), Type: BIGINT },
+				{ Name: 'count_skipped', Value: skipped.toString(), Type: BIGINT },
+				{ Name: 'count_flaky', Value: flaky.toString(), Type: BIGINT }
 			],
 			Dimensions: dimensions
 		}]
@@ -79,18 +93,23 @@ const makeDetailRecord = (detail) => {
 		started,
 		location,
 		retries,
-		totalDuration,
+		duration: {
+			total,
+			final
+		},
 		status,
-		duration,
 		browser,
 		type,
 		experience,
 		tool
 	} = detail;
-
+	const { file } = location;
 	const dimensions = [
 		{ Name: 'name', Value: name },
-		{ Name: 'location', Value: location }
+		// kept for backwards compat. Once all dashboards are updated will be removed
+		{ Name: 'location', Value: file },
+		/////////////////////////////////////////////////////////////////////////////
+		{ Name: 'location_file', Value: file }
 	];
 
 	if (browser) {
@@ -113,8 +132,12 @@ const makeDetailRecord = (detail) => {
 		Time: `${Date.parse(started)}`,
 		TimeUnit: MILLISECONDS,
 		MeasureValues: [
-			{ Name: 'duration', Value: `${duration}`, Type: BIGINT },
-			{ Name: 'total_duration', Value: `${totalDuration}`, Type: BIGINT },
+			// kept for backwards compat. Once all dashboards are updated will be removed
+			{ Name: 'duration', Value: final.toString(), Type: BIGINT },
+			{ Name: 'total_duration', Value: total.toString(), Type: BIGINT },
+			/////////////////////////////////////////////////////////////////////////////
+			{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
+			{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
 			{ Name: 'retries', Value: `${retries}`, Type: BIGINT },
 			{ Name: 'status', Value: status, Type: VARCHAR }
 		],
@@ -123,7 +146,7 @@ const makeDetailRecord = (detail) => {
 };
 
 const makeDetailWriteRequests = (report) => {
-	const { reportId, details } = report;
+	const { id, version, details } = report;
 	const batchSize = 100;
 	const writeRequests = Array.from(
 		{ length: Math.ceil(details.length / batchSize) },
@@ -138,10 +161,10 @@ const makeDetailWriteRequests = (report) => {
 				Records: detailRecordBatch,
 				CommonAttributes: {
 					Version: 1,
-					MeasureName: 'single_test_run',
+					MeasureName: `report_${version}_bc`,
 					MeasureValueType: MULTI,
 					Dimensions: [
-						{ Name: 'report_id', Value: reportId, Type: VARCHAR }
+						{ Name: 'report_id', Value: id, Type: VARCHAR }
 					]
 				}
 			};
