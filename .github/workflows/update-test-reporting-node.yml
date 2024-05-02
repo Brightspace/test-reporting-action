@@ -54,6 +54,7 @@ jobs:
         run: npm run build
       - name: Handle changes
         uses: Brightspace/third-party-actions@peter-evans/create-pull-request
+        id: changes
         if: steps.current.outputs.version != steps.new.outputs.version
         with:
           token: ${{secrets.PR_MANAGE_TOKEN}}
@@ -61,9 +62,22 @@ jobs:
           branch: ghworkflow/update-test-reporting-node
           title: Update `d2l-test-reporting` to `${{steps.new.outputs.version}}`
           body: Update `d2l-test-reporting` to `${{steps.new.outputs.version}}`
-          reviewers: '@Brightspace/quality-enablement-reviewers'
           delete-branch: true
           add-paths: |
             dist/*
             package.json
             package-lock.json
+      - name: Enable auto-merge
+        if: steps.changes.outputs.pull-request-operation == 'created'
+        run: gh pr merge --squash --auto "$PULL_REQUEST_URL"
+        env:
+          PULL_REQUEST_URL: ${{steps.changes.outputs.pull-request-url}}
+          GITHUB_TOKEN: ${{github.token}}
+      - name: Approve
+        if: >
+          steps.changes.outputs.pull-request-operation == 'created' ||
+          steps.changes.outputs.pull-request-operation == 'updated'
+        run: gh pr review --approve "$PULL_REQUEST_URL"
+        env:
+          PULL_REQUEST_URL: ${{steps.changes.outputs.pull-request-url}}
+          GITHUB_TOKEN: ${{github.token}}
