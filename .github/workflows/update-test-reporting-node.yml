@@ -82,3 +82,27 @@ jobs:
         env:
           PULL_REQUEST_URL: ${{steps.changes.outputs.pull-request-url}}
           GITHUB_TOKEN: ${{github.token}}
+      - name: Notify slack
+        if: failure()
+        uses: Brightspace/third-party-actions@slackapi/slack-github-action
+        env:
+          SLACK_BOT_TOKEN: ${{secrets.D2L_SLACK_TOKEN}}
+        with:
+          channel-id: '#quality-enablement-alerts'
+          payload: >
+            {
+              "username": "Update Test Reporting Issue",
+              "icon_emoji": ":update-package-lock:",
+              "unfurl_media": false,
+              "unfurl_links": false,
+              "text": ":fire: ${{github.repository}} -> Update run failed.\nSee ${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}} for details (trigger: ${{github.event_name}}, run attempt: ${{github.run_attempt}})",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":fire: `${{github.repository}}` -> Update run failed.\nSee the <${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}}|run logs> for details (trigger: `${{github.event_name}}`, run attempt: ${{github.run_attempt}})"
+                  }
+                }
+              ]
+            }
