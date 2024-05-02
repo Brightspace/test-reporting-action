@@ -72,7 +72,7 @@ jobs:
         run: gh pr merge --squash --auto "$PULL_REQUEST_URL"
         env:
           PULL_REQUEST_URL: ${{steps.changes.outputs.pull-request-url}}
-          GITHUB_TOKEN: ${{github.token}}
+          GITHUB_TOKEN: ${{secrets.PR_MANAGE_TOKEN}}
       - name: Approve
         if: >
           steps.changes.outputs.pull-request-operation == 'created' ||
