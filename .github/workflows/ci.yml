@@ -116,8 +116,8 @@ jobs:
           aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
           aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
           aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
-  handle:
-    name: Handle Automations
+  reviewers:
+    name: Add Reviewers
     timeout-minutes: 5
     runs-on: ubuntu-latest
     needs:
