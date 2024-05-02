@@ -1,3 +1,4 @@
 * @Brightspace/quality-enablement-reviewers
 dist/
 package-lock.json
+package.json
