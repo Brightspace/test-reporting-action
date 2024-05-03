@@ -82,7 +82,44 @@ jobs:
         env:
           PULL_REQUEST_URL: ${{steps.changes.outputs.pull-request-url}}
           GITHUB_TOKEN: ${{github.token}}
-      - name: Notify slack
+      - name: Get pull request age
+        if: steps.changes.outputs.pull-request-operation == 'updated'
+        id: pr-age
+        run: |
+          CREATED_AT=$(gh pr view "$PR_NUMBER" --json createdAt -q '.createdAt')
+          CREATED=$(date -d "$CREATED_AT" '+%s')
+          NOW=$(date '+%s')
+          DAYS_STALE="$((($NOW - $CREATED) / (24 * 60 * 60)))"
+          echo "days=$DAYS_STALE" >> $GITHUB_OUTPUT
+        env:
+          PR_NUMBER: ${{steps.changes.outputs.pull-request-number}}
+      - name: Notify automation stale
+        if: >
+          steps.changes.outputs.pull-request-operation == 'updated' &&
+          fromJSON(steps.pr-age.outputs.days) >= 0
+        uses: Brightspace/third-party-actions@slackapi/slack-github-action
+        env:
+          SLACK_BOT_TOKEN: ${{secrets.D2L_SLACK_TOKEN}}
+        with:
+          channel-id: '#quality-enablement-alerts'
+          payload: >
+            {
+              "username": "Stale Test Reporting PR",
+              "icon_emoji": ":update-package-lock:",
+              "unfurl_media": false,
+              "unfurl_links": false,
+              "text": ":warning: ${{github.repository}} -> PR #${{steps.changes.outputs.pull-request-number}} (${{github.server_url}}/${{github.repository}}/pull/${{steps.changes.outputs.pull-request-number}}) to d2l-test-reporting has been open for more than 3 days.",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":warning: `${{github.repository}}` -> <${{github.server_url}}/${{github.repository}}/pull/${{steps.changes.outputs.pull-request-number}}|PR #${{steps.changes.outputs.pull-request-number}}> to update `d2l-test-reporting` has been open for more than 3 days."
+                  }
+                }
+              ]
+            }
+      - name: Notify automation failure
         if: failure()
         uses: Brightspace/third-party-actions@slackapi/slack-github-action
         env:
