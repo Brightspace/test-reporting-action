@@ -113,10 +113,6 @@ const makeDetailRecord = (detail) => {
 		{ Name: 'location_file', Value: file }
 	];
 
-	if (timeout) {
-		dimensions.push({ Name: 'timeout', Value: timeout.toString() });
-	}
-
 	if (line) {
 		dimensions.push({ Name: 'location_line', Value: line.toString() });
 	}
@@ -141,19 +137,25 @@ const makeDetailRecord = (detail) => {
 		dimensions.push({ Name: 'tool', Value: tool });
 	}
 
+	const measureValues = [
+		// kept for backwards compat. Once all dashboards are updated will be removed
+		{ Name: 'duration', Value: final.toString(), Type: BIGINT },
+		{ Name: 'total_duration', Value: total.toString(), Type: BIGINT },
+		/////////////////////////////////////////////////////////////////////////////
+		{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
+		{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
+		{ Name: 'retries', Value: `${retries}`, Type: BIGINT },
+		{ Name: 'status', Value: status, Type: VARCHAR }
+	];
+
+	if (timeout) {
+		measureValues.push({ Name: 'timeout', Value: timeout.toString(), Type: BIGINT });
+	}
+
 	return {
 		Time: `${Date.parse(started)}`,
 		TimeUnit: MILLISECONDS,
-		MeasureValues: [
-			// kept for backwards compat. Once all dashboards are updated will be removed
-			{ Name: 'duration', Value: final.toString(), Type: BIGINT },
-			{ Name: 'total_duration', Value: total.toString(), Type: BIGINT },
-			/////////////////////////////////////////////////////////////////////////////
-			{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
-			{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
-			{ Name: 'retries', Value: `${retries}`, Type: BIGINT },
-			{ Name: 'status', Value: status, Type: VARCHAR }
-		],
+		MeasureValues: measureValues,
 		Dimensions: dimensions
 	};
 };
