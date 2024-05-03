@@ -97,7 +97,7 @@ jobs:
       - name: Notify automation stale
         if: >
           steps.changes.outputs.pull-request-operation == 'updated' &&
-          fromJSON(steps.pr-age.outputs.days) >= 0
+          fromJSON(steps.pr-age.outputs.days) > 3
         uses: Brightspace/third-party-actions@slackapi/slack-github-action
         env:
           SLACK_BOT_TOKEN: ${{secrets.D2L_SLACK_TOKEN}}
