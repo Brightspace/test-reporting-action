@@ -93,6 +93,7 @@ const makeDetailRecord = (detail) => {
 		started,
 		location,
 		retries,
+		timeout,
 		duration: {
 			total,
 			final
@@ -103,7 +104,7 @@ const makeDetailRecord = (detail) => {
 		experience,
 		tool
 	} = detail;
-	const { file } = location;
+	const { file, line, column } = location;
 	const dimensions = [
 		{ Name: 'name', Value: name },
 		// kept for backwards compat. Once all dashboards are updated will be removed
@@ -111,6 +112,18 @@ const makeDetailRecord = (detail) => {
 		/////////////////////////////////////////////////////////////////////////////
 		{ Name: 'location_file', Value: file }
 	];
+
+	if (timeout) {
+		dimensions.push({ Name: 'timeout', Value: timeout.toString() });
+	}
+
+	if (line) {
+		dimensions.push({ Name: 'location_line', Value: line.toString() });
+	}
+
+	if (column) {
+		dimensions.push({ Name: 'location_column', Value: column.toString() });
+	}
 
 	if (browser) {
 		dimensions.push({ Name: 'browser', Value: browser });
