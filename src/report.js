@@ -67,7 +67,7 @@ const makeSummaryWriteRequest = (report) => {
 		TableName: 'summary',
 		Records: [{
 			Version: 1,
-			Time: `${Date.parse(started)}`,
+			Time: (Date.parse(started)).toString(),
 			TimeUnit: MILLISECONDS,
 			MeasureName: `report_${version}_bc`,
 			MeasureValueType: MULTI,
@@ -142,7 +142,7 @@ const makeDetailRecord = (detail) => {
 	}
 
 	return {
-		Time: `${Date.parse(started)}`,
+		Time: (Date.parse(started)).toString(),
 		TimeUnit: MILLISECONDS,
 		MeasureValues: [
 			// kept for backwards compat. Once all dashboards are updated will be removed
@@ -151,7 +151,7 @@ const makeDetailRecord = (detail) => {
 			/////////////////////////////////////////////////////////////////////////////
 			{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
 			{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
-			{ Name: 'retries', Value: `${retries}`, Type: BIGINT },
+			{ Name: 'retries', Value: retries.toString(), Type: BIGINT },
 			{ Name: 'status', Value: status, Type: VARCHAR }
 		],
 		Dimensions: dimensions
