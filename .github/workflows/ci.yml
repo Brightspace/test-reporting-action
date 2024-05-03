@@ -63,7 +63,6 @@ jobs:
           branch: ghworkflow/update-build-for-pr-${{github.event.number}}
           title: Update Build for PR ${{github.event.number}}
           body: 'Update build for PR #${{github.event.number}}.'
-          reviewers: '@Brightspace/quality-enablement-reviewers'
           delete-branch: true
           draft: true
           add-paths: dist/*
@@ -133,12 +132,12 @@ jobs:
       - name: Add reviewers
         run: >
           gh api
-            --method POST
-            -H "Accept: application/vnd.github+json"
-            -H "X-GitHub-Api-Version: 2022-11-28"
-            "/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/requested_reviewers"
-            -f "reviewers[]=$REVIEWERS"
+            -X 'POST'
+            -H 'Accept: application/vnd.github+json'
+            -H 'X-GitHub-Api-Version: 2022-11-28'
+            "repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/requested_reviewers"
+            -f "team_reviewers[]=$REVIEWERS"
         env:
           PULL_REQUEST_NUMBER: ${{github.event.pull_request.number}}
-          REVIEWERS: Brightspace/quality-enablement-reviewers
+          REVIEWERS: quality-enablement-reviewers # must not include organization name
           GITHUB_TOKEN: ${{github.token}}
