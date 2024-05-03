@@ -139,6 +139,6 @@ jobs:
             "/repos/$GITHUB_REPOSITORY/pulls/$PULL_REQUEST_NUMBER/requested_reviewers"
             -f "reviewers[]=$REVIEWERS"
         env:
-          PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+          PULL_REQUEST_NUMBER: ${{github.event.pull_request.number}}
           REVIEWERS: Brightspace/quality-enablement-reviewers
           GITHUB_TOKEN: ${{github.token}}
