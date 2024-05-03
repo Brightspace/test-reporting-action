@@ -68,11 +68,6 @@ jobs:
             dist/*
             package.json
             package-lock.json
-      - name: Test
-        run: |
-          echo "Result: $TEST"
-        env:
-          TEST: ${{steps.changes.outputs.pull-request-operation == 'updated'}}
       - name: Enable auto-merge
         if: steps.changes.outputs.pull-request-operation == 'created'
         run: gh pr merge --squash --auto "$PULL_REQUEST_URL"
@@ -98,6 +93,7 @@ jobs:
           echo "days=$DAYS_STALE" >> $GITHUB_OUTPUT
         env:
           PR_NUMBER: ${{steps.changes.outputs.pull-request-number}}
+          GITHUB_TOKEN: ${{github.token}}
       - name: Notify automation stale
         if: >
           steps.changes.outputs.pull-request-operation == 'updated' &&
