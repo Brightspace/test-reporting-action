@@ -140,4 +140,4 @@ jobs:
         env:
           PULL_REQUEST_NUMBER: ${{github.event.pull_request.number}}
           REVIEWERS: quality-enablement-reviewers # must not include organization name
-          GITHUB_TOKEN: ${{github.token}}
+          GITHUB_TOKEN: ${{secrets.PR_MANAGE_TOKEN}}
