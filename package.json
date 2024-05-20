@@ -34,6 +34,6 @@
     "eslint-config-brightspace": "^1",
     "mocha": "^10",
     "rimraf": "^5",
-    "sinon": "^17"
+    "sinon": "^18"
   }
 }
