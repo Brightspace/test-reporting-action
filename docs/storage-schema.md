@@ -3,7 +3,7 @@
 All report data once submitted to the back-end is stored in [AWS Timestream].
 The data is split across 2 tables ([`summary`](#summary) and
 [`details`](#details)) to better store common items, reduce duplication and
-allow for more targeted queries. Below are a breakdown of the various tables and
+allow for more targeted queries. Below is a breakdown of the various tables and
 there columns as well as the corresponding JSON path within the report format
 the data is sourced from.
 
