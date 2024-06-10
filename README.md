@@ -58,6 +58,11 @@ data to the framework.
   additional log messages. Does not stop final submission of report data to
   backend. Only really useful for debugging and testing.
 
+## Storage Schema
+
+For details on what columns are available in [AWS Timestream] for analysis and
+dashboard building please see [Storage Schema](./docs/storage-schema.md).
+
 ## Developing
 
 After cloning the repository make sure to install dependencies.
@@ -108,3 +113,4 @@ npm run test:unit
 <!-- links -->
 [repo-settings]: https://github.com/Brightspace/repo-settings/blob/-/docs/test-reporting.md
 [node reporters]: https://github.com/Brightspace/test-reporting-node?tab=readme-ov-file#reporters
+[AWS Timestream]: https://aws.amazon.com/timestream
