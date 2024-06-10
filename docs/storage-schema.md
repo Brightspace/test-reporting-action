@@ -7,6 +7,10 @@ allow for more targeted queries. Below are a breakdown of the various tables and
 there columns as well as the corresponding JSON path within the report format
 the data is sourced from.
 
+> [!NOTE]
+  The storage schema is always based on the [latest report schema] and uses the
+  [auto upgrading report construct] to make sure it's always the latest schema.
+
 ## Tables
 
 ### `summary`
@@ -113,3 +117,5 @@ combination of the data is desired.
 
 <!-- links -->
 [AWS Timestream]: https://aws.amazon.com/timestream
+[latest report schema]: https://github.com/Brightspace/test-reporting-node/tree/main/schemas/report
+[auto upgrading report construct]: https://github.com/Brightspace/test-reporting-node/blob/main/src/helpers/report.cjs
