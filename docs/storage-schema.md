@@ -104,7 +104,7 @@ combination of the data is desired.
 * `experience` (`NULLABLE`): Sourced from report JSON
   `report.details[].experience`.
 * `tool` (`NULLABLE`): Sourced from report JSON `report.details[].tool`.
-* `timeout`: Stored as **milliseconds**, sourced from report JSON
+* `timeout` (`NULLABLE`): Stored as **milliseconds**, sourced from report JSON
   `report.details[].timeout`.
 
 > [!WARNING]
