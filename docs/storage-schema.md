@@ -93,8 +93,9 @@ combination of the data is desired.
 * `location` **[deprecated]**: Sourced from report JSON
   `report.details[].location.file`.
 * `location_file`: Sourced from report JSON `report.details[].location.file`.
-* `location_line`: Sourced from report JSON `report.details[].location.line`.
-* `location_column`: Sourced from report JSON
+* `location_line` (`NULLABLE`): Sourced from report JSON
+  `report.details[].location.line`.
+* `location_column` (`NULLABLE`): Sourced from report JSON
   `report.details[].location.column`.
 * `browser` (`NULLABLE`): Can be one of `chrome`, `chromium`, `firefox`,
   `webkit`, `safari` or `edge`, sourced from report JSON
