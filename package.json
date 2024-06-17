@@ -30,7 +30,7 @@
     "c8": "^9",
     "chai": "^5",
     "d2l-license-checker": "^4",
-    "eslint": "^8",
+    "eslint": "^9",
     "eslint-config-brightspace": "^1",
     "mocha": "^10",
     "rimraf": "^5",
