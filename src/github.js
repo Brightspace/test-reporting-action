@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import { getInput, getBooleanInput, setFailed } from '@actions/core';
 import { resolve } from 'path';
 
-const testReportingUrl = 'https://test-reporting.d2l.dev';
+const testReportingBaseUrl = 'https://test-reporting.d2l.dev';
 
 const makeLogger = () => ({ startGroup, endGroup, info, warning, error });
 
@@ -119,25 +119,25 @@ const updateSummary = (logger, context, inputs) => {
 	summary.addHeading('Test Reporting', 2);
 	summary.addRaw('The overview of data submitted can be found ');
 
-	const overviewHref = new URL('', testReportingUrl);
-	const { searchParams: overviewSearchParams } = overviewHref;
+	const metricsUrl = new URL('metrics', testReportingBaseUrl);
+	const { searchParams: overviewSearchParams } = metricsUrl;
 	const { github: { organization, repository } } = context;
 
 	overviewSearchParams.set('var-githubOrganizations', organization);
 	overviewSearchParams.set('var-githubRepositories', repository);
 
-	summary.addLink('here', overviewHref.toString());
+	summary.addLink('here', metricsUrl.toString());
 	summary.addEOL();
 	summary.addRaw('A more detailed view of data submitted can be found ');
 
-	const testReportingDrillDown = new URL('drill-down', testReportingUrl);
+	const drillDownUrl = new URL('drill-down', testReportingBaseUrl);
 
-	const { searchParams: drillDownSearchParams } = testReportingDrillDown;
+	const { searchParams: drillDownSearchParams } = drillDownUrl;
 
 	drillDownSearchParams.set('var-githubOrganizations', organization);
 	drillDownSearchParams.set('var-githubRepositories', repository);
 
-	summary.addLink('here', testReportingDrillDown.toString());
+	summary.addLink('here', drillDownUrl.toString());
 	summary.addEOL();
 
 	const { debug, dryRun } = inputs;
