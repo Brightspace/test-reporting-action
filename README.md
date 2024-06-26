@@ -39,6 +39,8 @@ data to the framework.
   the access key. This is essentially the "password" for the access key.
 * `aws-access-key-id` (required): Specifies an AWS access key associated with an
   IAM account.
+* `role-to-assume` ([see below]): The Amazon Resource Name (ARN) of the role to
+  assume.
 * `report-path` (default: `./d2l-test-report.json`): Path to report D2L format
   test report JSON file.
 * `lms-build-number`: The LMS build number of the site used to generate this
@@ -57,6 +59,15 @@ data to the framework.
 * `debug` (default: `false`): Enable or disable debug mode. Will enable
   additional log messages. Does not stop final submission of report data to
   backend. Only really useful for debugging and testing.
+
+## Authentication
+
+By default this action assumes you are using the default setup for sending to
+test reporting via [repo-settings] which means it will infer the role to assume
+based on your repository information. There is really no reason to change this
+but it has been exposed via `role-to-assume` in the rare case we need them in
+the future. As long as you've followed the instructions outlined in
+[repo-settings] this should work as expected.
 
 ## Storage Schema
 
@@ -114,3 +125,4 @@ npm run test:unit
 [repo-settings]: https://github.com/Brightspace/repo-settings/blob/-/docs/test-reporting.md
 [node reporters]: https://github.com/Brightspace/test-reporting-node?tab=readme-ov-file#reporters
 [AWS Timestream]: https://aws.amazon.com/timestream
+[see below]: #authentication

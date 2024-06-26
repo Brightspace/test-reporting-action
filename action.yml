@@ -11,6 +11,9 @@ inputs:
   aws-session-token:
     description: Specifies the session token value that is required if you are using temporary security credentials that you retrieved directly from AWS STS operations
     required: true
+  role-to-assume:
+    description: The Amazon Resource Name (ARN) of the role to assume. Use the provided credentials to assume an IAM role and configure the Actions environment with the assumed role credentials rather than with the provided credentials
+    default: arn:aws:iam::427469055187:role/github+${{github.repository_owner == 'BrightspaceHypermediaComponents' && 'BHC' || github.repository_owner}}+repo-settings+${{github.event.repository.name}}
   report-path:
     description: Path to report D2L format test report JSON file
     required: true
