@@ -312,13 +312,14 @@ const submit = async(logger, context, inputs, report) => {
 		const {
 			awsAccessKeyId: accessKeyId,
 			awsSecretAccessKey: secretAccessKey,
-			awsSessionToken: sessionToken
+			awsSessionToken: sessionToken,
+			roleToAssume: roleArn
 		} = inputs;
 
 		credentials = await assumeRole(
 			region,
 			{ accessKeyId, secretAccessKey, sessionToken },
-			'arn:aws:iam::427469055187:role/test-reporting-github',
+			roleArn,
 			`test-reporting-${(new Date()).getTime()}`,
 			3600, // 1 hour
 			[

@@ -52,6 +52,7 @@ const getInputs = async(logger) => {
 	const awsAccessKeyId = getStringInput('aws-access-key-id');
 	const awsSecretAccessKey = getStringInput('aws-secret-access-key');
 	const awsSessionToken = getStringInput('aws-session-token');
+	const roleToAssume = getStringInput('role-to-assume');
 
 	logger.info('Determine report path');
 
@@ -104,6 +105,7 @@ const getInputs = async(logger) => {
 		awsAccessKeyId,
 		awsSecretAccessKey,
 		awsSessionToken,
+		roleToAssume,
 		reportPath,
 		lmsBuildNumber,
 		lmsInstanceUrl,
