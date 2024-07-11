@@ -7,9 +7,9 @@ reporters from [node reporters].
 ## Set-Up
 
 In order for your repository to be able to submit test report you must first
-enable the `test_reporting` option for you repository in [repo-settings]. This
-will give your repository access to have the GitHub Action submit test reporting
-data to the framework.
+enable the `test_reporting` option for you repository in [repo-settings] (D2L
+employee accessible only). This will give your repository access to have the
+GitHub Action submit test reporting data to the framework.
 
 > [!CAUTION]
 > Without this set-up you will see errors about being `unable to assume required
@@ -27,8 +27,8 @@ data to the framework.
 ```
 
 > [!IMPORTANT]
-> This action assumes a report, conforming to the D2L report schema, has
-> already been generated using a given test framework reporter or manually. For
+> This action assumes a report, conforming to the D2L report schema, has already
+> been generated using a given test framework reporter or manually. For
 > available reporters please see [node reporters].
 
 ### Inputs
@@ -47,8 +47,8 @@ data to the framework.
   report. Will throw an error if provided and already present in the report.
 * `lms-instance-url`: The LMS instance URL of the site used to generate this
   report. Will throw an error if provided and already present in the report.
-* `inject-github-context` (default: `auto`): Change mode for injection of
-  GitHub Actions context at report submission time.
+* `inject-github-context` (default: `auto`): Change mode for injection of GitHub
+  Actions context at report submission time.
   * `auto`: Injects GitHub Actions context into report if missing
   * `force`: Injects GitHub Actions context into report always
   * `off`: Will not inject GitHub Actions context into report even if missing,
@@ -63,11 +63,12 @@ data to the framework.
 ## Authentication
 
 By default this action assumes you are using the default setup for sending to
-test reporting via [repo-settings] which means it will infer the role to assume
-based on your repository information. There is really no reason to change this
-but it has been exposed via `role-to-assume` in the rare case we need them in
-the future. As long as you've followed the instructions outlined in
-[repo-settings] this should work as expected.
+test reporting via [repo-settings] (D2L employee accessible only) which means it
+will infer the role to assume based on your repository information. There is
+really no reason to change this but it has been exposed via `role-to-assume` in
+the rare case we need them in the future. As long as you've followed the
+instructions outlined in [repo-settings] (D2L employee accessible only) this
+should work as expected.
 
 ## Storage Schema
 
