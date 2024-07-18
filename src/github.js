@@ -5,6 +5,7 @@ import { getInput, getBooleanInput, setFailed } from '@actions/core';
 import { resolve } from 'path';
 
 const testReportingBaseUrl = 'https://test-reporting.d2l.dev';
+const defaultBranchNames = ['main', 'master'];
 
 const makeLogger = () => ({ startGroup, endGroup, info, warning, error });
 
@@ -123,10 +124,15 @@ const updateSummary = (logger, context, inputs) => {
 
 	const metricsUrl = new URL('metrics', testReportingBaseUrl);
 	const { searchParams: overviewSearchParams } = metricsUrl;
-	const { github: { organization, repository } } = context;
+	const { github: { organization, repository, branch } } = context;
+	const isNotDefaultBranch = !defaultBranchNames.includes(branch);
 
 	overviewSearchParams.set('var-githubOrganizations', organization);
 	overviewSearchParams.set('var-githubRepositories', repository);
+
+	if (isNotDefaultBranch) {
+		overviewSearchParams.set('var-branchType', 'All');
+	}
 
 	summary.addLink('here', metricsUrl.toString());
 	summary.addEOL();
@@ -138,6 +144,10 @@ const updateSummary = (logger, context, inputs) => {
 
 	drillDownSearchParams.set('var-githubOrganizations', organization);
 	drillDownSearchParams.set('var-githubRepositories', repository);
+
+	if (isNotDefaultBranch) {
+		drillDownSearchParams.set('var-branchType', 'All');
+	}
 
 	summary.addLink('here', drillDownUrl.toString());
 	summary.addEOL();
