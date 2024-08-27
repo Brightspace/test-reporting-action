@@ -4,6 +4,10 @@ A GitHub Action for uploading D2L format test reports to back-end visualization
 and querying infrastructure. This action is meant to be used in conjunction with
 reporters from [node reporters].
 
+> [!NOTE]
+> If you have any questions, concerns or just want to chat feel free to reach
+> out in [#test-reporting] (D2L employee accessible only).
+
 ## Set-Up
 
 In order for your repository to be able to submit test report you must first
@@ -127,3 +131,4 @@ npm run test:unit
 [node reporters]: https://github.com/Brightspace/test-reporting-node?tab=readme-ov-file#reporters
 [AWS Timestream]: https://aws.amazon.com/timestream
 [see below]: #authentication
+[#test-reporting]: https://d2l.slack.com/archives/C05MMC7H7EK
