@@ -5,8 +5,8 @@ and querying infrastructure. This action is meant to be used in conjunction with
 reporters from [node reporters].
 
 > [!NOTE]
-> If you have any question, concerns or just want to chat feel free to reach out
-> in [#test-reporting] (D2L employee accessible only).
+> If you have any questions, concerns or just want to chat feel free to reach
+> out in [#test-reporting] (D2L employee accessible only).
 
 ## Set-Up
 
