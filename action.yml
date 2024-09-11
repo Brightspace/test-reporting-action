@@ -28,6 +28,10 @@ inputs:
     description: Change mode for injection of GitHub Actions context at report submission time
     required: true
     default: auto
+  post-summary:
+    description: Post information about data submitted to GitHub summary
+    required: false
+    default: true
   dry-run:
     description: Run action in dry run mode. Will perform all operations except final submission of report data to backend
     required: true
