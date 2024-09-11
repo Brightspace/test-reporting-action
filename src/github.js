@@ -93,6 +93,10 @@ const getInputs = async(logger) => {
 
 	logger.info(`Inject context mode: ${injectGitHubContext}`);
 
+	const postSummary = getBooleanInput('post-summary', { required: true });
+
+	logger.info(`Post summary: ${postSummary}`);
+
 	const dryRun = getBooleanInput('dry-run', { required: true });
 
 	logger.info(`Dry run: ${dryRun}`);
@@ -111,6 +115,7 @@ const getInputs = async(logger) => {
 		lmsBuildNumber,
 		lmsInstanceUrl,
 		injectGitHubContext,
+		postSummary,
 		dryRun,
 		debug
 	};
@@ -118,6 +123,15 @@ const getInputs = async(logger) => {
 
 const updateSummary = (logger, context, inputs) => {
 	logger.startGroup('Update GitHub Actions summary');
+
+	const { postSummary } = inputs;
+
+	if (!postSummary) {
+		logger.info('Skip GitHub Action summary update');
+		logger.endGroup();
+
+		return;
+	}
 
 	summary.addHeading('Test Reporting', 2);
 	summary.addRaw('The overview of data submitted can be found ');
@@ -139,7 +153,6 @@ const updateSummary = (logger, context, inputs) => {
 	summary.addRaw('A more detailed view of data submitted can be found ');
 
 	const drillDownUrl = new URL('drill-down', testReportingBaseUrl);
-
 	const { searchParams: drillDownSearchParams } = drillDownUrl;
 
 	drillDownSearchParams.set('var-githubOrganizations', organization);
@@ -161,11 +174,13 @@ const updateSummary = (logger, context, inputs) => {
 
 	if (dryRun) {
 		logger.info('Dry run, skipping GitHub Action summary update');
+		logger.endGroup();
 
 		return;
 	}
 
 	summary.write();
+	logger.endGroup();
 };
 
 export { getContext, getInputs, makeLogger, setFailed, updateSummary };

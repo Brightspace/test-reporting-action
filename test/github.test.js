@@ -163,6 +163,7 @@ describe('github', () => {
 				'INPUT_LMS-BUILD-NUMBER': '20.24.1.12345',
 				'INPUT_LMS-INSTANCE-URL': 'https://cd2024112345.devlms.desire2learn.com',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+				'INPUT_POST-SUMMARY': 'true',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
@@ -194,6 +195,7 @@ describe('github', () => {
 				'INPUT_ROLE-TO-ASSUME': 'role-to-assume',
 				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+				'INPUT_POST-SUMMARY': 'true',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
@@ -222,6 +224,7 @@ describe('github', () => {
 				'INPUT_ROLE-TO-ASSUME': 'role-to-assume',
 				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+				'INPUT_POST-SUMMARY': 'true',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
@@ -247,6 +250,7 @@ describe('github', () => {
 				'INPUT_ROLE-TO-ASSUME': 'role-to-assume',
 				'INPUT_REPORT-PATH': 'not a file',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
+				'INPUT_POST-SUMMARY': 'true',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
@@ -273,6 +277,7 @@ describe('github', () => {
 				'INPUT_ROLE-TO-ASSUME': 'role-to-assume',
 				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'bad',
+				'INPUT_POST-SUMMARY': 'true',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
