@@ -26,7 +26,7 @@ GitHub Action submit test reporting data to the framework.
   uses: Brightspace/test-reporting-action@main
   if: >
     (failure() || success()) &&
-    github.triggering_actor != 'dependabot[bot]'
+    github.actor != 'dependabot[bot]'
   with:
     aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
     aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
