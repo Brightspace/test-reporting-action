@@ -13,9 +13,6 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-patch']
-      # Remove after eslint 9 stops throwing npm i errors
-      - dependency-name: eslint
-        versions: '>= 9'
     groups:
       aws-clients:
         dependency-type: production
