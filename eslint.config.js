@@ -15,7 +15,7 @@ const compat = new FlatCompat({
 
 export default [
 	includeIgnoreFile(gitignorePath),
-	{ ignores: ['**/dist/'] },
+	{ ignores: ['dist/'] },
 	...compat.extends('brightspace/node-config').map((config) => ({
 		...config,
 		files: ['**/*.js', '**/*.cjs']
