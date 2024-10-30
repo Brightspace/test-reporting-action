@@ -1,7 +1,0 @@
-{
-  "root": true,
-  "extends": "brightspace/node-config",
-  "rules": {
-    "comma-dangle": "error"
-  }
-}
