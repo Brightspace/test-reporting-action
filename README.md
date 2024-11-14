@@ -121,11 +121,14 @@ npm run build
 ### Linting
 
 ```console
-# currently only eslint
+# eslint and editorconfig-checker
 npm run lint
 
 # eslint only
 npm run lint:eslint
+
+# editorconfig-checker only
+npm run lint:editorconfig
 ```
 
 ### Fixing
