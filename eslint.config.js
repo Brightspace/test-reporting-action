@@ -1,27 +1,30 @@
-import path from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { nodeConfig, setDirectoryConfigs, testingConfig } from 'eslint-config-brightspace';
 import { fileURLToPath } from 'node:url';
-import js from '@eslint/js';
-import { FlatCompat } from '@eslint/eslintrc';
+import globals from 'globals';
 import { includeIgnoreFile } from '@eslint/compat';
+import jsonPlugin from 'eslint-plugin-json';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const gitignorePath = path.resolve(__dirname, '.gitignore');
-const compat = new FlatCompat({
-	baseDirectory: __dirname,
-	recommendedConfig: js.configs.recommended,
-	allConfig: js.configs.all
-});
+const __dirname = dirname(__filename);
+const gitignorePath = resolve(__dirname, '.gitignore');
 
 export default [
 	includeIgnoreFile(gitignorePath),
-	{ ignores: ['dist/'] },
-	...compat.extends('brightspace/node-config').map((config) => ({
-		...config,
-		files: ['**/*.js', '**/*.cjs']
-	})),
-	...compat.extends('brightspace/testing-config').map((config) => ({
-		...config,
-		files: ['test/**/*.test.js']
-	}))
+	{ ignores: ['**/dist/'] },
+	...setDirectoryConfigs(
+		nodeConfig,
+		{
+			'test/': testingConfig
+		}
+	),
+	{
+		files: ['test/**/*.js'],
+		languageOptions: {
+			globals: {
+				...globals.node
+			}
+		}
+	},
+	jsonPlugin.configs['recommended']
 ];
