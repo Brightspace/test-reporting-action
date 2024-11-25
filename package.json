@@ -27,8 +27,6 @@
   },
   "devDependencies": {
     "@eslint/compat": "^1",
-    "@eslint/eslintrc": "^3",
-    "@eslint/js": "^9",
     "@vercel/ncc": "^0.38",
     "aws-sdk-client-mock": "^4",
     "c8": "^10",
@@ -36,7 +34,9 @@
     "d2l-license-checker": "^4",
     "editorconfig-checker": "^6",
     "eslint": "^9",
-    "eslint-config-brightspace": "^1",
+    "eslint-config-brightspace": "^2",
+    "eslint-plugin-json": "^4",
+    "globals": "^15",
     "mocha": "^10",
     "rimraf": "^6",
     "sinon": "^19"
