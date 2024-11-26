@@ -7,6 +7,7 @@ import jsonPlugin from 'eslint-plugin-json';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const jsonConfig = jsonPlugin.configs['recommended'];
 const gitignorePath = resolve(__dirname, '.gitignore');
 
 export default [
@@ -26,5 +27,5 @@ export default [
 			}
 		}
 	},
-	jsonPlugin.configs['recommended']
+	jsonConfig
 ];
