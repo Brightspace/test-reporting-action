@@ -49,6 +49,8 @@ jobs:
     steps:
       - name: Checkout
         uses: Brightspace/third-party-actions@actions/checkout
+        with:
+          token: ${{github.actor == 'd2l-github-action-tokens[bot]' && secrets.PR_MANAGE_TOKEN || github.token}}
       - name: Set up node
         uses: Brightspace/third-party-actions@actions/setup-node
         with:
@@ -58,9 +60,10 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
-      - name: Handle changes
+      - name: Handle changes (pull request)
         uses: Brightspace/third-party-actions@peter-evans/create-pull-request
-        id: changes
+        if: github.actor != 'd2l-github-action-tokens[bot]'
+        id: changes-pr
         with:
           commit-message: Update Build
           base: ${{github.event.pull_request.head.ref}}
@@ -71,21 +74,57 @@ jobs:
           draft: true
           add-paths: dist/*
       - name: Leave comment
-        if: steps.changes.outputs.pull-request-operation == 'created'
+        if: >
+          github.actor != 'd2l-github-action-tokens[bot]' &&
+          steps.changes-pr.outputs.pull-request-operation == 'created'
         uses: BrightspaceUI/actions/comment-on-pr@main
         with:
           message: >
             New build required - pull request
-            #${{steps.changes.outputs.pull-request-number}} has been opened with
+            #${{steps.changes-pr.outputs.pull-request-number}} has been opened with
             new built files.
           post-mode: hide-previous
       - name: Report status
         if: >
-          steps.changes.outputs.pull-request-operation == 'created' ||
-          steps.changes.outputs.pull-request-operation == 'updated'
+          github.actor != 'd2l-github-action-tokens[bot]' &&
+          (
+            steps.changes-pr.outputs.pull-request-operation == 'created' ||
+            steps.changes-pr.outputs.pull-request-operation == 'updated'
+          )
         uses: Brightspace/third-party-actions@actions/github-script
         with:
           script: core.setFailed('Build changes detected')
+      - name: Handle changes (push)
+        id: changes-push
+        if: github.actor == 'd2l-github-action-tokens[bot]'
+        run: |
+          set +e
+          git diff --exit-code --name-only 'dist/*'
+          RESULT="$?"
+          set -e
+          if [[ "$RESULT" -eq 0 ]]; then
+            echo "No changes detected"
+            echo "exist=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "exist=true" >> $GITHUB_OUTPUT
+          git stash
+          git fetch -n origin "$GITHUB_HEAD_REF"
+          git checkout "$GITHUB_HEAD_REF"
+          git stash pop
+          git add 'dist/*'
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m 'Update Build'
+          git push -f "https://$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY" "$GITHUB_HEAD_REF"
+        env:
+          GITHUB_TOKEN: ${{secrets.PR_MANAGE_TOKEN}}
+      - name: Approve
+        if: steps.changes-push.outputs.exist == 'true'
+        run: gh pr review --approve "$PULL_REQUEST_NUMBER"
+        env:
+          PULL_REQUEST_NUMBER: ${{github.event.number}}
+          GITHUB_TOKEN: ${{github.token}}
   test:
     name: Test
     timeout-minutes: 5

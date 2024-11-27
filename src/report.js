@@ -94,11 +94,8 @@ const makeDetailRecord = (detail) => {
 		location,
 		retries,
 		timeout,
-		duration: {
-			total,
-			final
-		},
 		status,
+		duration: { total, final },
 		browser,
 		type,
 		experience,
@@ -187,7 +184,7 @@ const makeDetailWriteRequests = (report) => {
 	return writeRequests;
 };
 
-const assumeRole = async(region, credentials, arn, sessionName, duration, tags) => {
+const assumeRole = async (region, credentials, arn, sessionName, duration, tags) => {
 	const client = new STSClient({ region, credentials });
 	const command = new AssumeRoleCommand({
 		RoleArn: arn,
@@ -205,7 +202,7 @@ const assumeRole = async(region, credentials, arn, sessionName, duration, tags) 
 	};
 };
 
-const writeTimestream = async(region, credentials, requests) => {
+const writeTimestream = async (region, credentials, requests) => {
 	const client = new TimestreamWriteClient({ credentials, region });
 
 	for (const request of requests) {
@@ -215,7 +212,7 @@ const writeTimestream = async(region, credentials, requests) => {
 	}
 };
 
-const finalize = async(logger, context, inputs) => {
+const finalize = async (logger, context, inputs) => {
 	logger.startGroup('Finalize test report');
 
 	const { reportPath, injectGitHubContext, lmsBuildNumber, lmsInstanceUrl, debug } = inputs;
@@ -273,7 +270,7 @@ const finalize = async(logger, context, inputs) => {
 	return report;
 };
 
-const submit = async(logger, context, inputs, report) => {
+const submit = async (logger, context, inputs, report) => {
 	logger.startGroup('Submit report');
 	logger.info('Generate summary write request');
 
