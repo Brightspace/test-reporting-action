@@ -36,6 +36,7 @@
     "eslint": "^9",
     "eslint-config-brightspace": "^2",
     "eslint-plugin-json": "^4",
+    "eslint-plugin-mocha": "^10",
     "globals": "^15",
     "mocha": "^10",
     "rimraf": "^6",
