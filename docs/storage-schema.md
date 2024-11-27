@@ -22,8 +22,6 @@ as some rolled up counts of various test statuses.
 
 * `duration_total` (`BIGINT`): Stored as **milliseconds** from report JSON
   `report.summary.duration.total`.
-* `total_duration` (`BIGINT`) **[deprecated]**: Stored as **milliseconds**,
-  sourced from report JSON `report.summary.duration.total`.
 * `status` (`VARCHAR`): Will either be `passed` or `failed`, sourced rom report
   JSON `report.summary.status`.
 * `count_passed` (`BIGINT`): Sourced from report JSON
@@ -38,6 +36,13 @@ as some rolled up counts of various test statuses.
 > [!WARNING]
   Anything marked with **[deprecated]** should be moved away from. Sending of
   this column will be removed in the near future.
+
+##### Removed
+
+* `total_duration` (`BIGINT`): Starting with records that have `measure_name` of
+  `report_v2` this field will no longer be present. Please use `duration_total`
+  instead. If wanting to get data from records prior to `report_v2` please use
+  `COALESCE(total_duration, duration_total)` to get a reasonable value.
 
 #### Dimensions
 
@@ -63,6 +68,10 @@ as some rolled up counts of various test statuses.
 * `lms_instance_url` (`NULLABLE`): Sourced from report JSON
   `report.summary.lms.instanceUrl`.
 
+> [!WARNING]
+  Anything marked with **[deprecated]** should be moved away from. Sending of
+  this column will be removed in the near future.
+
 ### `details`
 
 This table contains information about each individual test that was run. A
@@ -73,12 +82,8 @@ combination of the data is desired.
 
 * `duration_final` (`BIGINT`): Stored as **milliseconds**, sourced from report
   JSON `report.details[].duration.final`.
-* `duration` (`BIGINT`) **[deprecated]**: Stored as **milliseconds**, sourced
-  from report JSON `report.details[].duration.final`.
 * `duration_total` (`BIGINT`): Stored as **milliseconds**, sourced from report
   `JSON report.details[].duration.total`.
-* `total_duration` (`BIGINT`) **[deprecated]**: Stored as **milliseconds**,
-  sourced from report JSON `report.details[].duration.total`.
 * `retries` (`BIGINT`): Sourced from report JSON `report.details[].retries`.
 * `status` (`VARCHAR`): Will be one of `passed`, `skipped` or `failed`, sourced
   from report JSON `report.details[].status`.
@@ -87,6 +92,17 @@ combination of the data is desired.
   Anything marked with **[deprecated]** should be moved away from. Sending of
   this column will be removed in the near future.
 
+##### Removed
+
+* `duration` (`BIGINT`): Starting with records that have `measure_name` of
+  `report_v2` this field will no longer be present. Please use `duration_final`
+  instead. If wanting to get data from records prior to `report_v2` please use
+  `COALESCE(duration, duration_final)` to get a reasonable value.
+* `total_duration` (`BIGINT`): Starting with records that have `measure_name` of
+  `report_v2` this field will no longer be present. Please use `duration_total`
+  instead. If wanting to get data from records prior to `report_v2` please use
+  `COALESCE(total_duration, duration_total)` to get a reasonable value.
+
 #### Dimensions
 
 > [!NOTE]
@@ -94,8 +110,6 @@ combination of the data is desired.
 
 * `report_id`: Sourced from report JSON `report.id`.
 * `name`: Sourced from report JSON `report.details[].name`.
-* `location` **[deprecated]**: Sourced from report JSON
-  `report.details[].location.file`.
 * `location_file`: Sourced from report JSON `report.details[].location.file`.
 * `location_line` (`NULLABLE`): Sourced from report JSON
   `report.details[].location.line`.
@@ -114,6 +128,14 @@ combination of the data is desired.
 > [!WARNING]
   Anything marked with **[deprecated]** should be moved away from. Sending of
   this column will be removed in the near future.
+
+##### Removed
+
+* `location`: Starting with records that have `measure_name` of
+  `report_v2` this field will no longer be present. Please use `location_file`
+  instead. If wanting to get data from records prior to `report_v2` please use
+  `COALESCE(location, location_file)` to get a reasonable value.
+
 
 <!-- links -->
 [AWS Timestream]: https://aws.amazon.com/timestream
