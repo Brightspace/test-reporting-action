@@ -5,7 +5,10 @@ The data is split across 2 tables ([`summary`](#summary) and
 [`details`](#details)) to better store common items, reduce duplication and
 allow for more targeted queries. Below is a breakdown of the various tables and
 there columns as well as the corresponding JSON path within the report format
-the data is sourced from.
+the data is sourced from. The current `measure_name` for both tables is
+`report_v2`. Old format records will be marked with `report_2_bc` and can
+require special handling. See notes under various **Removed** sections for
+details.
 
 > [!NOTE]
   The storage schema is always based on the [latest report schema] and uses the
