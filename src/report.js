@@ -69,12 +69,9 @@ const makeSummaryWriteRequest = (report) => {
 			Version: 1,
 			Time: (Date.parse(started)).toString(),
 			TimeUnit: MILLISECONDS,
-			MeasureName: `report_${version}_bc`,
+			MeasureName: `report_v${version}`,
 			MeasureValueType: MULTI,
 			MeasureValues: [
-				// kept for backwards compat. Once all dashboards are updated will be removed
-				{ Name: 'total_duration', Value: total.toString(), Type: BIGINT },
-				/////////////////////////////////////////////////////////////////////////////
 				{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
 				{ Name: 'status', Value: status, Type: VARCHAR },
 				{ Name: 'count_passed', Value: passed.toString(), Type: BIGINT },
@@ -107,9 +104,6 @@ const makeDetailRecord = (detail) => {
 	const { file, line, column } = location;
 	const dimensions = [
 		{ Name: 'name', Value: name },
-		// kept for backwards compat. Once all dashboards are updated will be removed
-		{ Name: 'location', Value: file },
-		/////////////////////////////////////////////////////////////////////////////
 		{ Name: 'location_file', Value: file }
 	];
 
@@ -145,10 +139,6 @@ const makeDetailRecord = (detail) => {
 		Time: (Date.parse(started)).toString(),
 		TimeUnit: MILLISECONDS,
 		MeasureValues: [
-			// kept for backwards compat. Once all dashboards are updated will be removed
-			{ Name: 'duration', Value: final.toString(), Type: BIGINT },
-			{ Name: 'total_duration', Value: total.toString(), Type: BIGINT },
-			/////////////////////////////////////////////////////////////////////////////
 			{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
 			{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
 			{ Name: 'retries', Value: retries.toString(), Type: BIGINT },
@@ -174,7 +164,7 @@ const makeDetailWriteRequests = (report) => {
 				Records: detailRecordBatch,
 				CommonAttributes: {
 					Version: 1,
-					MeasureName: `report_${version}_bc`,
+					MeasureName: `report_v${version}`,
 					MeasureValueType: MULTI,
 					Dimensions: [
 						{ Name: 'report_id', Value: id, Type: VARCHAR }
