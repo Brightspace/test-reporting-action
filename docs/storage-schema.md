@@ -136,7 +136,6 @@ combination of the data is desired.
   instead. If wanting to get data from records prior to `report_v2` please use
   `COALESCE(location, location_file)` to get a reasonable value.
 
-
 <!-- links -->
 [AWS Timestream]: https://aws.amazon.com/timestream
 [latest report schema]: https://github.com/Brightspace/test-reporting-node/tree/main/schemas/report
