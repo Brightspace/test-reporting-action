@@ -69,7 +69,7 @@ const makeSummaryWriteRequest = (report) => {
 			Version: 1,
 			Time: (Date.parse(started)).toString(),
 			TimeUnit: MILLISECONDS,
-			MeasureName: `report_${version}_bc`,
+			MeasureName: `report_v${version}`,
 			MeasureValueType: MULTI,
 			MeasureValues: [
 				{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
