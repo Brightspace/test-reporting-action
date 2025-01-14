@@ -136,7 +136,7 @@ const updateSummary = (logger, context, inputs) => {
 	summary.addHeading('Test Reporting', 2);
 	summary.addRaw('The overview of data submitted can be found ');
 
-	const metricsUrl = new URL('metrics', testReportingBaseUrl);
+	const metricsUrl = new URL('analytics/metrics', testReportingBaseUrl);
 	const { searchParams: overviewSearchParams } = metricsUrl;
 	const { github: { organization, repository, branch } } = context;
 	const isNotDefaultBranch = !defaultBranchNames.includes(branch);
@@ -152,7 +152,7 @@ const updateSummary = (logger, context, inputs) => {
 	summary.addEOL();
 	summary.addRaw('A more detailed view of data submitted can be found ');
 
-	const drillDownUrl = new URL('drill-down', testReportingBaseUrl);
+	const drillDownUrl = new URL('analytics/drill-down', testReportingBaseUrl);
 	const { searchParams: drillDownSearchParams } = drillDownUrl;
 
 	drillDownSearchParams.set('var-githubOrganizations', organization);
