@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import { getInput, getBooleanInput, setFailed } from '@actions/core';
 import { resolve } from 'path';
 
-const testReportingBaseUrl = 'https://test-reporting.d2l.dev';
+const testReportingBaseUrl = 'https://test-reporting.d2l.dev/analytics';
 const defaultBranchNames = ['main', 'master'];
 
 const makeLogger = () => ({ startGroup, endGroup, info, warning, error });
