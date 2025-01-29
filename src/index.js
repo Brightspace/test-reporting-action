@@ -3,9 +3,9 @@ import { finalize, submit } from './report.js';
 
 (async() => {
 	const logger = makeLogger();
+	const executionContext = getContext(logger);
 
 	try {
-		const executionContext = getContext(logger);
 		const inputs = await getInputs(logger);
 		const report = await finalize(logger, executionContext, inputs);
 		const reportContext = report.getContext();

@@ -78,7 +78,15 @@ jobs:
             New build required - pull request
             #${{steps.changes.outputs.pull-request-number}} has been opened with
             new built files.
+          unique-key: build
           post-mode: hide-previous
+      - name: Hide comments
+        if: >
+          steps.changes.outputs.pull-request-operation != 'created' &&
+          steps.changes.outputs.pull-request-operation != 'updated'
+        uses: Brightspace/third-party-actions@int128/hide-comment-action
+        with:
+          starts-with: <!-- build -->
       - name: Report status
         if: >
           steps.changes.outputs.pull-request-operation == 'created' ||
