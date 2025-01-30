@@ -99,6 +99,9 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: Brightspace/third-party-actions@actions/checkout
@@ -127,3 +130,52 @@ jobs:
           aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
           aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
           aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+      - name: Generate coverage report info
+        if: github.actor != 'dependabot[bot]'
+        id: coverage-info
+        run: |
+          COMMON_PATH="$GITHUB_REPOSITORY/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT/$GITHUB_JOB"
+          DESTINATION="s3://test-reporting-coverage/$COMMON_PATH/"
+          SOURCE='./coverage/lcov-report/'
+          URL="https://test-reporting.d2l.dev/coverage/$COMMON_PATH/"
+          echo "destination=$DESTINATION" >> $GITHUB_OUTPUT
+          echo "source=$SOURCE" >> $GITHUB_OUTPUT
+          echo "url=$URL" >> $GITHUB_OUTPUT
+      - name: Assume role
+        if: github.actor != 'dependabot[bot]'
+        uses: Brightspace/third-party-actions@aws-actions/configure-aws-credentials
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::427469055187:role/github+Brightspace+test-reporting-action
+          role-duration-seconds: 3600
+      - name: Upload code coverage
+        if: github.actor != 'dependabot[bot]'
+        uses: BrightspaceUI/actions/publish-to-s3@main
+        with:
+          bucket-path: ${{steps.coverage-info.outputs.destination}}
+          publish-directory: ${{steps.coverage-info.outputs.source}}
+      - name: Generate test summary
+        id: test-summary
+        uses: Brightspace/third-party-actions@actions/github-script
+        with:
+          script: |
+            const { env } = await import('node:process');
+            const { COVERAGE_REPORT_URL: coverageReportUrl } = env;
+            const { summary } = core;
+            summary.clear();
+            if (coverageReportUrl) {
+              summary.addHeading('Coverage report', 3);
+              summary.addLink('Report', coverageReportUrl);
+            }
+            summary.write({ overwrite: true });
+            core.setOutput('report', summary.stringify());
+        env:
+          COVERAGE_REPORT_URL: ${{steps.coverage-info.outputs.url}}
+      - name: Leave comment
+        uses: BrightspaceUI/actions/comment-on-pr@main
+        with:
+          message: ${{steps.test-summary.outputs.report}}
+          post-mode: hide-previous
