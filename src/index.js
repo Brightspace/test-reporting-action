@@ -7,7 +7,7 @@ import { finalize, submit } from './report.js';
 	try {
 		const executionContext = getContext(logger);
 		const inputs = await getInputs(logger);
-		const report = await finalize(logger, executionContext, inputs);
+		const report = finalize(logger, executionContext, inputs);
 		const reportContext = report.getContext();
 
 		await submit(logger, executionContext, inputs, report);
