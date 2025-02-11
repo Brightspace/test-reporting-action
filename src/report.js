@@ -205,7 +205,7 @@ const writeTimestream = async(region, credentials, requests) => {
 	}
 };
 
-const finalize = async(logger, context, inputs) => {
+const finalize = (logger, context, inputs) => {
 	logger.startGroup('Finalize test report');
 
 	const { reportPath, injectGitHubContext, lmsBuildNumber, lmsInstanceUrl, debug } = inputs;
