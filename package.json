@@ -41,6 +41,6 @@
     "globals": "^16",
     "mocha": "^11",
     "rimraf": "^6",
-    "sinon": "^19"
+    "sinon": "^20"
   }
 }
