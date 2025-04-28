@@ -158,6 +158,7 @@ jobs:
           bucket-path: ${{steps.coverage-info.outputs.destination}}
           publish-directory: ${{steps.coverage-info.outputs.source}}
       - name: Generate test summary
+        if: github.actor != 'dependabot[bot]'
         id: test-summary
         uses: Brightspace/third-party-actions@actions/github-script
         with:
@@ -175,6 +176,7 @@ jobs:
         env:
           COVERAGE_REPORT_URL: ${{steps.coverage-info.outputs.url}}
       - name: Leave comment
+        if: github.actor != 'dependabot[bot]'
         uses: BrightspaceUI/actions/comment-on-pr@main
         with:
           message: ${{steps.test-summary.outputs.report}}
