@@ -30,7 +30,7 @@ const globalConfigs = [
 ];
 const testConfigs = [
 	...globalConfigs,
-	mochaPlugin.configs.flat.recommended,
+	mochaPlugin.configs.recommended,
 	{
 		rules: {
 			'mocha/no-exclusive-tests': 'error',
