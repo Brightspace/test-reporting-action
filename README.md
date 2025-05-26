@@ -153,7 +153,7 @@ npm run test:unit
 ```
 
 <!-- links -->
-[repo-settings]: https://github.com/Brightspace/repo-settings/blob/-/docs/test-reporting.md
+[repo-settings]: https://github.com/Brightspace/repo-settings/blob/-/docs/test-reporting.md#analytics
 [node reporters]: https://github.com/Brightspace/test-reporting-node?tab=readme-ov-file#reporters
 [AWS Timestream]: https://aws.amazon.com/timestream
 [see below]: #authentication
