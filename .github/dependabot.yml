@@ -9,7 +9,7 @@ updates:
       timezone: America/Toronto
     versioning-strategy: increase
     reviewers:
-      - Brightspace/quality-enablement-reviewers
+      - Brightspace/quality-enablement
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-patch']
