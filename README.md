@@ -62,6 +62,7 @@ GitHub Action submit test reporting data to the framework.
   * `force`: Injects GitHub Actions context into report always
   * `off`: Will not inject GitHub Actions context into report even if missing,
     can result in validation failure if not present
+* `post-summary` (default: `true`): Post or hide information about data submitted to GitHub summary
 * `dry-run` (default: `false`): Enable or disable dry run mode. Will perform all
   operations except final submission of report data to backend. Only really
   useful for debugging and testing.
