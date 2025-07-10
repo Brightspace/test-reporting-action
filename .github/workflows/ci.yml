@@ -74,10 +74,10 @@ jobs:
         if: steps.changes.outputs.pull-request-operation == 'created'
         uses: BrightspaceUI/actions/comment-on-pr@main
         with:
-          message: >
-            New build required - pull request
-            #${{steps.changes.outputs.pull-request-number}} has been opened with
-            new built files.
+          message: |
+            New build required - pull request #${{steps.changes.outputs.pull-request-number}} has been opened with new built files.
+
+            Please review and merge it to update the build files on your pull request.
           unique-key: auto-build
           post-mode: hide-previous
       - name: Hide comments
