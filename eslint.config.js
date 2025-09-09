@@ -16,9 +16,19 @@ const ignoreConfigs = [
 const globalConfigs = [
 	...nodeConfig,
 	{
+		linterOptions: {
+			reportUnusedInlineConfigs: 'error',
+			reportUnusedDisableDirectives: 'error'
+		}
+	},
+	{
 		rules: {
-			'comma-dangle': 'error',
-			'require-await': 'error'
+			'require-await': 'error',
+			'key-spacing': ['error', { beforeColon: false, afterColon: true }],
+			'object-shorthand': ['error', 'always'],
+			'prefer-template': 'error',
+			'@stylistic/comma-dangle': 'error',
+			'@stylistic/template-curly-spacing': ['error', 'never']
 		}
 	},
 	promisePlugin.configs['flat/recommended'],
