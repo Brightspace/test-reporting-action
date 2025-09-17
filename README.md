@@ -11,7 +11,7 @@ reporters from [node reporters].
 ## Set-Up
 
 In order for your repository to be able to submit test report you must first
-enable the `test_reporting` option for you repository in [repo-settings] (D2L
+enable the `test_reporting` option for your repository in [repo-settings] (D2L
 employee accessible only). This will give your repository access to have the
 GitHub Action submit test reporting data to the framework.
 
@@ -32,9 +32,10 @@ GitHub Action submit test reporting data to the framework.
 ```
 
 > [!IMPORTANT]
-> This action assumes a report, conforming to the D2L report schema, has already
-> been generated using a given test framework reporter or manually. For
-> available reporters please see [node reporters].
+> This action assumes a report, conforming to the [D2L test report format], has
+> already been generated using one of the available test framework [node
+> reporters]. This report file, typically generated at `./d2l-test-report.json`,
+> must be available at the time this action is run otherwise it will fail.
 
 > [!NOTE]
 > If using this action in a workflow triggered by a `pull_request` please see
@@ -46,12 +47,13 @@ GitHub Action submit test reporting data to the framework.
   IAM account.
 * `aws-secret-access-key` (required): Specifies the secret key associated with
   the access key. This is essentially the "password" for the access key.
-* `aws-access-key-id` (required): Specifies an AWS access key associated with an
-  IAM account.
+* `aws-session-token` (required): Specifies the session token value that is
+  required if you are using temporary security credentials that you retrieved
+  directly from AWS STS operations.
 * `role-to-assume` ([see below]): The Amazon Resource Name (ARN) of the role to
   assume.
-* `report-path` (default: `./d2l-test-report.json`): Path to report D2L format
-  test report JSON file.
+* `report-path` (default: `./d2l-test-report.json`): Path to the D2L format test
+  report JSON file to process.
 * `lms-build-number`: The LMS build number of the site used to generate this
   report. Will throw an error if provided and already present in the report.
 * `lms-instance-url`: The LMS instance URL of the site used to generate this
@@ -62,7 +64,8 @@ GitHub Action submit test reporting data to the framework.
   * `force`: Injects GitHub Actions context into report always
   * `off`: Will not inject GitHub Actions context into report even if missing,
     can result in validation failure if not present
-* `post-summary` (default: `true`): Post or hide information about data submitted to GitHub summary
+* `post-summary` (default: `true`): Post or hide information about data
+  submitted to GitHub summary
 * `dry-run` (default: `false`): Enable or disable dry run mode. Will perform all
   operations except final submission of report data to backend. Only really
   useful for debugging and testing.
@@ -83,8 +86,8 @@ should work as expected.
 ## Dependabot
 
 If you are using this action in a context where [`dependabot`] can be a possible
-actor then you must skip this actions step as `secrets` may not be available.
-This would look something like this.
+actor then you must skip this action's step as `secrets` may not be available.
+This looks like the following:
 
 ```yml
 - name: Upload test report
@@ -160,3 +163,4 @@ npm run test:unit
 [see below]: #authentication
 [#test-reporting]: https://d2l.slack.com/archives/C05MMC7H7EK
 [`dependabot`]: https://docs.github.com/en/code-security/getting-started/dependabot-quickstart-guide
+[D2L test report format]: https://github.com/Brightspace/test-reporting-node/blob/main/docs/report-format.md

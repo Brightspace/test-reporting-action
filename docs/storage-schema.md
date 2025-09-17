@@ -4,7 +4,7 @@ All report data once submitted to the back-end is stored in [AWS Timestream].
 The data is split across 2 tables ([`summary`](#summary) and
 [`details`](#details)) to better store common items, reduce duplication and
 allow for more targeted queries. Below is a breakdown of the various tables and
-there columns as well as the corresponding JSON path within the report format
+their columns as well as the corresponding JSON path within the report format
 the data is sourced from. The current `measure_name` for both tables is
 `report_v2`. Old format records will be marked with `report_2_bc` or
 `*_test_run` and can require special handling. See notes under various
@@ -25,7 +25,7 @@ as some rolled up counts of various test statuses.
 
 * `duration_total` (`BIGINT`): Stored as **milliseconds** from report JSON
   `report.summary.duration.total`.
-* `status` (`VARCHAR`): Will either be `passed` or `failed`, sourced rom report
+* `status` (`VARCHAR`): Will either be `passed` or `failed`, sourced from report
   JSON `report.summary.status`.
 * `count_passed` (`BIGINT`): Sourced from report JSON
   `report.summary.count.passed`.
@@ -77,16 +77,16 @@ as some rolled up counts of various test statuses.
 
 ### `details`
 
-This table contains information about each individual test that was run. A
-mapping to the [`summary`](#summary) data can be done via the `report_id` if a
-combination of the data is desired.
+This table contains information about each individual test that was run. You can
+map to the [`summary`](#summary) data via the `report_id` if you need a
+combination of the data.
 
 #### Measures
 
 * `duration_final` (`BIGINT`): Stored as **milliseconds**, sourced from report
   JSON `report.details[].duration.final`.
 * `duration_total` (`BIGINT`): Stored as **milliseconds**, sourced from report
-  `JSON report.details[].duration.total`.
+  JSON `report.details[].duration.total`.
 * `retries` (`BIGINT`): Sourced from report JSON `report.details[].retries`.
 * `status` (`VARCHAR`): Will be one of `passed`, `skipped` or `failed`, sourced
   from report JSON `report.details[].status`.
