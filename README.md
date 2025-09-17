@@ -10,7 +10,7 @@ reporters from [node reporters].
 
 ## Set-Up
 
-In order for your repository to be able to submit test report you must first
+In order for your repository to be able to submit a test report you must first
 enable the `test_reporting` option for your repository in [repo-settings] (D2L
 employee accessible only). This will give your repository access to have the
 GitHub Action submit test reporting data to the framework.
@@ -53,7 +53,7 @@ GitHub Action submit test reporting data to the framework.
 * `role-to-assume` ([see below]): The Amazon Resource Name (ARN) of the role to
   assume.
 * `report-path` (default: `./d2l-test-report.json`): Path to the D2L format test
-  report JSON file to process.
+  report JSON file for processing.
 * `lms-build-number`: The LMS build number of the site used to generate this
   report. Will throw an error if provided and already present in the report.
 * `lms-instance-url`: The LMS instance URL of the site used to generate this
@@ -64,7 +64,7 @@ GitHub Action submit test reporting data to the framework.
   * `force`: Injects GitHub Actions context into report always
   * `off`: Will not inject GitHub Actions context into report even if missing,
     can result in validation failure if not present
-* `post-summary` (default: `true`): Post or hide information about data
+* `post-summary` (default: `true`): Posts or hides information about data
   submitted to GitHub summary
 * `dry-run` (default: `false`): Enable or disable dry run mode. Will perform all
   operations except final submission of report data to backend. Only really
@@ -108,7 +108,7 @@ dashboard building please see [Storage Schema](./docs/storage-schema.md).
 
 ## Developing
 
-After cloning the repository make sure to install dependencies.
+After cloning the repository, make sure to install dependencies.
 
 ```console
 npm ci
