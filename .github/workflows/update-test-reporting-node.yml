@@ -4,12 +4,10 @@ on:
   repository_dispatch: # repository trigger
     types:
       - test-reporting-node-release
-env:
-  FORCE_COLOR: 3
-concurrency: update-test-reporting-node
 permissions:
   contents: read
   pull-requests: write
+concurrency: update-test-reporting-node
 jobs:
   update:
     name: Update Test Reporting (Node)
