@@ -31,7 +31,7 @@
     "aws-sdk-client-mock": "^4",
     "c8": "^10",
     "chai": "^6",
-    "d2l-license-checker": "^5",
+    "d2l-license-checker": "^6",
     "editorconfig-checker": "^6",
     "eslint": "^9",
     "eslint-config-brightspace": "^2",
