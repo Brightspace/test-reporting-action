@@ -51,7 +51,7 @@ jobs:
       - name: Checkout
         uses: Brightspace/third-party-actions@actions/checkout
         with:
-          persist-credentials: false        
+          persist-credentials: false
       - name: Set up node
         uses: Brightspace/third-party-actions@actions/setup-node
         with:
