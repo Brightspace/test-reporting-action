@@ -23,7 +23,7 @@
     "d2l-test-reporting": "^4"
   },
   "devDependencies": {
-    "@eslint/compat": "^1",
+    "@eslint/compat": "^2",
     "@vercel/ncc": "^0.38",
     "aws-sdk-client-mock": "^4",
     "c8": "^10",
