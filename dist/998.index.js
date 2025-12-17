@@ -959,7 +959,7 @@ const isSsoProfile = (arg) => arg &&
         typeof arg.sso_role_name === "string");
 
 const SHOULD_FAIL_CREDENTIAL_CHAIN = false;
-const resolveSSOCredentials = async ({ ssoStartUrl, ssoSession, ssoAccountId, ssoRegion, ssoRoleName, ssoClient, clientConfig, parentClientConfig, profile, filepath, configFilepath, ignoreCache, logger, }) => {
+const resolveSSOCredentials = async ({ ssoStartUrl, ssoSession, ssoAccountId, ssoRegion, ssoRoleName, ssoClient, clientConfig, parentClientConfig, callerClientConfig, profile, filepath, configFilepath, ignoreCache, logger, }) => {
     let token;
     const refreshMessage = `To refresh this SSO session run aws sso login with the corresponding profile.`;
     if (ssoSession) {
@@ -1003,9 +1003,9 @@ const resolveSSOCredentials = async ({ ssoStartUrl, ssoSession, ssoAccountId, ss
     const { SSOClient, GetRoleCredentialsCommand } = await Promise.resolve().then(function () { return __webpack_require__(6553); });
     const sso = ssoClient ||
         new SSOClient(Object.assign({}, clientConfig ?? {}, {
-            logger: clientConfig?.logger ?? parentClientConfig?.logger,
+            logger: clientConfig?.logger ?? callerClientConfig?.logger ?? parentClientConfig?.logger,
             region: clientConfig?.region ?? ssoRegion,
-            userAgentAppId: clientConfig?.userAgentAppId ?? parentClientConfig?.userAgentAppId,
+            userAgentAppId: clientConfig?.userAgentAppId ?? callerClientConfig?.userAgentAppId ?? parentClientConfig?.userAgentAppId,
         }));
     let ssoResp;
     try {
@@ -1101,6 +1101,7 @@ const fromSSO = (init = {}) => async ({ callerClientConfig } = {}) => {
             ssoClient: ssoClient,
             clientConfig: init.clientConfig,
             parentClientConfig: init.parentClientConfig,
+            callerClientConfig: init.callerClientConfig,
             profile: profileName,
             filepath: init.filepath,
             configFilepath: init.configFilepath,
@@ -1122,6 +1123,7 @@ const fromSSO = (init = {}) => async ({ callerClientConfig } = {}) => {
             ssoClient,
             clientConfig: init.clientConfig,
             parentClientConfig: init.parentClientConfig,
+            callerClientConfig: init.callerClientConfig,
             profile: profileName,
             filepath: init.filepath,
             configFilepath: init.configFilepath,
@@ -1187,9 +1189,9 @@ const fromEnvSigningName = ({ logger, signingName } = {}) => async () => {
 const EXPIRE_WINDOW_MS = 5 * 60 * 1000;
 const REFRESH_MESSAGE = `To refresh this SSO session run 'aws sso login' with the corresponding profile.`;
 
-const getSsoOidcClient = async (ssoRegion, init = {}) => {
+const getSsoOidcClient = async (ssoRegion, init = {}, callerClientConfig) => {
     const { SSOOIDCClient } = await __webpack_require__.e(/* import() */ 443).then(__webpack_require__.t.bind(__webpack_require__, 9443, 19));
-    const coalesce = (prop) => init.clientConfig?.[prop] ?? init.parentClientConfig?.[prop];
+    const coalesce = (prop) => init.clientConfig?.[prop] ?? init.parentClientConfig?.[prop] ?? callerClientConfig?.[prop];
     const ssoOidcClient = new SSOOIDCClient(Object.assign({}, init.clientConfig ?? {}, {
         region: ssoRegion ?? init.clientConfig?.region,
         logger: coalesce("logger"),
@@ -1198,9 +1200,9 @@ const getSsoOidcClient = async (ssoRegion, init = {}) => {
     return ssoOidcClient;
 };
 
-const getNewSsoOidcToken = async (ssoToken, ssoRegion, init = {}) => {
+const getNewSsoOidcToken = async (ssoToken, ssoRegion, init = {}, callerClientConfig) => {
     const { CreateTokenCommand } = await __webpack_require__.e(/* import() */ 443).then(__webpack_require__.t.bind(__webpack_require__, 9443, 19));
-    const ssoOidcClient = await getSsoOidcClient(ssoRegion, init);
+    const ssoOidcClient = await getSsoOidcClient(ssoRegion, init, callerClientConfig);
     return ssoOidcClient.send(new CreateTokenCommand({
         clientId: ssoToken.clientId,
         clientSecret: ssoToken.clientSecret,
@@ -1229,14 +1231,7 @@ const writeSSOTokenToFile = (id, ssoToken) => {
 };
 
 const lastRefreshAttemptTime = new Date(0);
-const fromSso = (_init = {}) => async ({ callerClientConfig } = {}) => {
-    const init = {
-        ..._init,
-        parentClientConfig: {
-            ...callerClientConfig,
-            ..._init.parentClientConfig,
-        },
-    };
+const fromSso = (init = {}) => async ({ callerClientConfig } = {}) => {
     init.logger?.debug("@aws-sdk/token-providers - fromSso");
     const profiles = await sharedIniFileLoader.parseKnownFiles(init);
     const profileName = sharedIniFileLoader.getProfileName({
@@ -1285,7 +1280,7 @@ const fromSso = (_init = {}) => async ({ callerClientConfig } = {}) => {
     validateTokenKey("refreshToken", ssoToken.refreshToken, true);
     try {
         lastRefreshAttemptTime.setTime(Date.now());
-        const newSsoOidcToken = await getNewSsoOidcToken(ssoToken, ssoRegion, init);
+        const newSsoOidcToken = await getNewSsoOidcToken(ssoToken, ssoRegion, init, callerClientConfig);
         validateTokenKey("accessToken", newSsoOidcToken.accessToken);
         validateTokenKey("expiresIn", newSsoOidcToken.expiresIn);
         const newTokenExpiration = new Date(Date.now() + newSsoOidcToken.expiresIn * 1000);
