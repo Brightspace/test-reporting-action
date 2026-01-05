@@ -35,7 +35,7 @@
     "eslint-plugin-json": "^4",
     "eslint-plugin-mocha": "^11",
     "eslint-plugin-promise": "^7",
-    "globals": "^16",
+    "globals": "^17",
     "mocha": "^11",
     "rimraf": "^6",
     "sinon": "^21"
