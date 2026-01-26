@@ -24,7 +24,7 @@ GitHub Action submit test reporting data to the framework.
 ```yml
 - name: Upload test report
   uses: Brightspace/test-reporting-action@main
-  if: failure() || success()
+  if: (!cancelled())
   with:
     aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
     aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
@@ -93,7 +93,7 @@ This looks like the following:
 - name: Upload test report
   uses: Brightspace/test-reporting-action@main
   if: >
-    (failure() || success()) &&
+    (!cancelled()) &&
     github.actor != 'dependabot[bot]'
   with:
     aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
