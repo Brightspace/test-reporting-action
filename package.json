@@ -20,7 +20,7 @@
     "@actions/core": "^3",
     "@aws-sdk/client-sts": "^3",
     "@aws-sdk/client-timestream-write": "^3",
-    "d2l-test-reporting": "^4"
+    "d2l-test-reporting": "^5"
   },
   "devDependencies": {
     "@eslint/compat": "^2",
