@@ -1,5 +1,5 @@
 {
-  "name": "test-reporting-action",
+  "private": true,
   "description": "GitHub Action for reporting test data",
   "license": "Apache-2.0",
   "author": "D2L Corporation",
