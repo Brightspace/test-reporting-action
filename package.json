@@ -26,7 +26,7 @@
     "@eslint/compat": "^2",
     "@vercel/ncc": "^0.38",
     "aws-sdk-client-mock": "^4",
-    "c8": "^10",
+    "c8": "^11",
     "chai": "^6",
     "d2l-license-checker": "^7",
     "editorconfig-checker": "^6",
