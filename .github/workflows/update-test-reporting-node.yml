@@ -1,12 +1,12 @@
 name: Update Test Reporting (Node)
+permissions:
+  contents: read
+  pull-requests: write
 on:
   workflow_dispatch: # manual trigger
   repository_dispatch: # repository trigger
     types:
       - test-reporting-node-release
-permissions:
-  contents: read
-  pull-requests: write
 concurrency: update-test-reporting-node
 jobs:
   update:
