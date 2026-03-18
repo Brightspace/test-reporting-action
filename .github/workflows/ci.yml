@@ -98,9 +98,17 @@ jobs:
         with:
           script: core.setFailed('Build changes detected')
   test:
-    name: Test
+    name: Test (${{matrix.os.name}})
     timeout-minutes: 5
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - name: Linux
+            runs-on: ubuntu-latest
+          - name: Windows
+            runs-on: windows-latest
+    runs-on: ${{matrix.os.runs-on}}
     needs: build
     permissions:
       contents: read
@@ -136,14 +144,17 @@ jobs:
       - name: Generate coverage report info
         if: github.actor != 'dependabot[bot]'
         id: coverage-info
+        shell: bash
         run: |
-          COMMON_PATH="$GITHUB_REPOSITORY/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT/$GITHUB_JOB"
+          COMMON_PATH="$GITHUB_REPOSITORY/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT/$GITHUB_JOB/$OS_NAME"
           DESTINATION="s3://test-reporting-coverage/$COMMON_PATH/"
           SOURCE='./coverage/lcov-report/'
           URL="https://test-reporting.d2l.dev/coverage/$COMMON_PATH/"
           echo "destination=$DESTINATION" >> $GITHUB_OUTPUT
           echo "source=$SOURCE" >> $GITHUB_OUTPUT
           echo "url=$URL" >> $GITHUB_OUTPUT
+        env:
+          OS_NAME: ${{matrix.os.name}}
       - name: Assume role
         if: github.actor != 'dependabot[bot]'
         uses: Brightspace/third-party-actions@aws-actions/configure-aws-credentials
@@ -167,20 +178,25 @@ jobs:
         with:
           script: |
             const { env } = await import('node:process');
-            const { COVERAGE_REPORT_URL: coverageReportUrl } = env;
+            const {
+              COVERAGE_REPORT_URL: coverageReportUrl,
+              OS_NAME: osName
+            } = env;
             const { summary } = core;
             summary.clear();
             if (coverageReportUrl) {
-              summary.addHeading('Coverage report', 3);
+              summary.addHeading(`Coverage report (${osName})`, 3);
               summary.addLink('Report', coverageReportUrl);
             }
             summary.write({ overwrite: true });
             core.setOutput('report', summary.stringify());
         env:
           COVERAGE_REPORT_URL: ${{steps.coverage-info.outputs.url}}
+          OS_NAME: ${{matrix.os.name}}
       - name: Leave comment
         if: github.actor != 'dependabot[bot]'
         uses: BrightspaceUI/actions/comment-on-pr@main
         with:
           message: ${{steps.test-summary.outputs.report}}
+          unique-key: test-summary-${{matrix.os.name}}
           post-mode: hide-previous
