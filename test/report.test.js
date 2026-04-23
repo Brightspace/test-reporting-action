@@ -144,6 +144,92 @@ const testAwsStsCredentials = {
 	}
 };
 
+const testReportV2WithCodeowners = {
+	id: '00000000-0000-0000-0000-000000000000',
+	version: 2,
+	summary: {
+		github: {
+			organization: testContext.github.organization,
+			repository: testContext.github.repository,
+			workflow: testContext.github.workflow,
+			runId: testContext.github.runId,
+			runAttempt: testContext.github.runAttempt
+		},
+		git: {
+			branch: testContext.git.branch,
+			sha: testContext.git.sha
+		},
+		operatingSystem: 'linux',
+		framework: 'mocha',
+		started: (new Date()).toISOString(),
+		duration: {
+			total: 23857
+		},
+		status: 'passed',
+		count: {
+			passed: 2,
+			failed: 0,
+			skipped: 1,
+			flaky: 1
+		}
+	},
+	details: [{
+		name: 'test suite > flaky test',
+		location: {
+			file: 'test/test-suite.js'
+		},
+		started: (new Date()).toISOString(),
+		duration: {
+			final: 237,
+			total: 549
+		},
+		status: 'passed',
+		retries: 1,
+		browser: 'chromium',
+		type: 'unit',
+		tool: 'Tool',
+		experience: 'Experience',
+		github: {
+			codeowners: ['@owner-1', '@owner-2']
+		}
+	}, {
+		name: 'test suite > passing test',
+		location: {
+			file: 'test/test-suite.js'
+		},
+		started: (new Date()).toISOString(),
+		duration: {
+			final: 237,
+			total: 237
+		},
+		status: 'passed',
+		retries: 0,
+		browser: 'chromium',
+		type: 'unit',
+		tool: 'Tool',
+		experience: 'Experience',
+		github: {
+			codeowners: ['@owner-1']
+		}
+	}, {
+		name: 'test suite > skipped test',
+		location: {
+			file: 'test/test-suite.js'
+		},
+		started: (new Date()).toISOString(),
+		duration: {
+			final: 0,
+			total: 0
+		},
+		status: 'skipped',
+		retries: 0,
+		browser: 'chromium',
+		type: 'unit',
+		tool: 'Tool',
+		experience: 'Experience'
+	}]
+};
+
 describe('report', () => {
 	let sandbox;
 	let logger;
@@ -409,6 +495,57 @@ describe('report', () => {
 
 			expect(stsClientMock.calls().length).to.eq(1);
 			expect(timestreamWriteClientMock.calls().length).to.eq(2);
+		});
+
+		describe('codeowners', () => {
+			it('enabled', async() => {
+				stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+				timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+				sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV2WithCodeowners));
+
+				const report = new Report('dummy-report-path');
+				const inputs = { ...testInputsNoLmsInfo, sendCodeowners: true };
+
+				await submit(logger, testContext, inputs, report);
+
+				const detailWriteCall = timestreamWriteClientMock.calls()[1];
+				const detailRecords = detailWriteCall.args[0].input.Records;
+				const recordWithMultipleOwners = detailRecords[0];
+				const codeownersDim = recordWithMultipleOwners.Dimensions.find(d => d.Name === 'github_codeowners');
+
+				expect(codeownersDim).to.not.be.undefined;
+				expect(codeownersDim.Value).to.eq('@owner-1,@owner-2');
+
+				const recordWithSingleOwner = detailRecords[1];
+				const singleCodeownersDim = recordWithSingleOwner.Dimensions.find(d => d.Name === 'github_codeowners');
+
+				expect(singleCodeownersDim).to.not.be.undefined;
+				expect(singleCodeownersDim.Value).to.eq('@owner-1');
+
+				const recordWithoutOwners = detailRecords[2];
+				const noCodeownersDim = recordWithoutOwners.Dimensions.find(d => d.Name === 'github_codeowners');
+
+				expect(noCodeownersDim).to.be.undefined;
+			});
+
+			it('disabled', async() => {
+				stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+				timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+				sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV2WithCodeowners));
+
+				const report = new Report('dummy-report-path');
+
+				await submit(logger, testContext, testInputsNoLmsInfo, report);
+
+				const detailWriteCall = timestreamWriteClientMock.calls()[1];
+				const detailRecords = detailWriteCall.args[0].input.Records;
+
+				for (const record of detailRecords) {
+					const codeownersDim = record.Dimensions.find(d => d.Name === 'github_codeowners');
+
+					expect(codeownersDim).to.be.undefined;
+				}
+			});
 		});
 
 		describe('fails', () => {

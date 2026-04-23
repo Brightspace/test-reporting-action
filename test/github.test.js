@@ -164,6 +164,7 @@ describe('github', () => {
 				'INPUT_LMS-INSTANCE-URL': 'https://cd2024112345.devlms.desire2learn.com',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
 				'INPUT_POST-SUMMARY': 'true',
+				'INPUT_SEND-CODEOWNERS': 'true',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
@@ -180,6 +181,7 @@ describe('github', () => {
 			expect(inputs.lmsBuildNumber).to.eq('20.24.1.12345');
 			expect(inputs.lmsInstanceUrl).to.eq('https://cd2024112345.devlms.desire2learn.com');
 			expect(inputs.injectGitHubContext).to.eq('auto');
+			expect(inputs.sendCodeowners).to.be.true;
 			expect(inputs.dryRun).to.be.true;
 			expect(inputs.debug).to.be.true;
 		});
@@ -196,6 +198,7 @@ describe('github', () => {
 				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
 				'INPUT_POST-SUMMARY': 'true',
+				'INPUT_SEND-CODEOWNERS': 'false',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
@@ -212,6 +215,7 @@ describe('github', () => {
 			expect(inputs.lmsBuildNumber).to.not.exist;
 			expect(inputs.lmsInstanceUrl).to.not.exist;
 			expect(inputs.injectGitHubContext).to.eq('auto');
+			expect(inputs.sendCodeowners).to.be.false;
 			expect(inputs.dryRun).to.be.true;
 			expect(inputs.debug).to.be.true;
 		});
@@ -225,6 +229,7 @@ describe('github', () => {
 				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
 				'INPUT_POST-SUMMARY': 'true',
+				'INPUT_SEND-CODEOWNERS': 'false',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
@@ -251,6 +256,7 @@ describe('github', () => {
 				'INPUT_REPORT-PATH': 'not a file',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'auto',
 				'INPUT_POST-SUMMARY': 'true',
+				'INPUT_SEND-CODEOWNERS': 'false',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});
@@ -278,6 +284,7 @@ describe('github', () => {
 				'INPUT_REPORT-PATH': './test/data/d2l-test-report.json',
 				'INPUT_INJECT-GITHUB-CONTEXT': 'bad',
 				'INPUT_POST-SUMMARY': 'true',
+				'INPUT_SEND-CODEOWNERS': 'false',
 				'INPUT_DRY-RUN': 'true',
 				'INPUT_DEBUG': 'true'
 			});

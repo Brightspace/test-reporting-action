@@ -97,6 +97,10 @@ const getInputs = async(logger) => {
 
 	logger.info(`Post summary: ${postSummary}`);
 
+	const sendCodeowners = getBooleanInput('send-codeowners', { required: false });
+
+	logger.info(`Send codeowners: ${sendCodeowners}`);
+
 	const dryRun = getBooleanInput('dry-run', { required: true });
 
 	logger.info(`Dry run: ${dryRun}`);
@@ -116,6 +120,7 @@ const getInputs = async(logger) => {
 		lmsInstanceUrl,
 		injectGitHubContext,
 		postSummary,
+		sendCodeowners,
 		dryRun,
 		debug
 	};

@@ -84,7 +84,7 @@ const makeSummaryWriteRequest = (report) => {
 	};
 };
 
-const makeDetailRecord = (detail) => {
+const makeDetailRecord = (detail, { sendCodeowners = false } = {}) => {
 	const {
 		name,
 		started,
@@ -99,7 +99,8 @@ const makeDetailRecord = (detail) => {
 		browser,
 		type,
 		experience,
-		tool
+		tool,
+		github
 	} = detail;
 	const { file, line, column } = location;
 	const dimensions = [
@@ -135,6 +136,14 @@ const makeDetailRecord = (detail) => {
 		dimensions.push({ Name: 'tool', Value: tool });
 	}
 
+	if (sendCodeowners) {
+		const codeowners = github?.codeowners;
+
+		if (codeowners && codeowners.length > 0) {
+			dimensions.push({ Name: 'github_codeowners', Value: codeowners.join(',') });
+		}
+	}
+
 	return {
 		Time: (Date.parse(started)).toString(),
 		TimeUnit: MILLISECONDS,
@@ -148,7 +157,7 @@ const makeDetailRecord = (detail) => {
 	};
 };
 
-const makeDetailWriteRequests = (report) => {
+const makeDetailWriteRequests = (report, options) => {
 	const { id, version, details } = report;
 	const batchSize = 100;
 	const writeRequests = Array.from(
@@ -156,7 +165,7 @@ const makeDetailWriteRequests = (report) => {
 		(v, i) => {
 			const detailRecordBatch = details
 				.slice(i * batchSize, i * batchSize + batchSize)
-				.map(makeDetailRecord);
+				.map(detail => makeDetailRecord(detail, options));
 
 			return {
 				DatabaseName: databaseName,
@@ -269,7 +278,7 @@ const submit = async(logger, context, inputs, report) => {
 
 	report = report.toJSON();
 
-	const { debug } = inputs;
+	const { debug, sendCodeowners } = inputs;
 	const summaryWriteRequest = makeSummaryWriteRequest(report);
 
 	if (debug) {
@@ -279,7 +288,7 @@ const submit = async(logger, context, inputs, report) => {
 
 	logger.info('Generate detail write requests');
 
-	const detailWriteRequests = makeDetailWriteRequests(report);
+	const detailWriteRequests = makeDetailWriteRequests(report, { sendCodeowners });
 
 	if (debug) {
 		logger.info('Generated detail write requests\n');

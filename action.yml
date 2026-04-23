@@ -32,6 +32,10 @@ inputs:
     description: Post information about data submitted to GitHub summary
     required: false
     default: true
+  send-codeowners:
+    description: Enable or disable sending of codeowners data with report details
+    required: false
+    default: false
   dry-run:
     description: Run action in dry run mode. Will perform all operations except final submission of report data to backend
     required: true

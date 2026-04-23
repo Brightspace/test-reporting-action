@@ -127,6 +127,9 @@ combination of the data.
 * `tool` (`NULLABLE`): Sourced from report JSON `report.details[].tool`.
 * `timeout` (`NULLABLE`): Stored as **milliseconds**, sourced from report JSON
   `report.details[].timeout`.
+* `github_codeowners` (`NULLABLE`): Comma-delimited list of codeowners, sourced
+  from report JSON `report.details[].github.codeowners`. Stored as a delimited string
+  since Timestream does not support array types.
 
 > [!WARNING]
   Anything marked with **[deprecated]** should be moved away from. Sending of
