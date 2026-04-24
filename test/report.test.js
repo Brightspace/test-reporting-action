@@ -144,6 +144,61 @@ const testAwsStsCredentials = {
 	}
 };
 
+const testReportV2WithCodeowners = {
+	id: '00000000-0000-0000-0000-000000000000',
+	version: 2,
+	summary: {
+		github: {
+			organization: testContext.github.organization,
+			repository: testContext.github.repository,
+			workflow: testContext.github.workflow,
+			runId: testContext.github.runId,
+			runAttempt: testContext.github.runAttempt
+		},
+		git: {
+			branch: testContext.git.branch,
+			sha: testContext.git.sha
+		},
+		operatingSystem: 'linux',
+		framework: 'mocha',
+		started: (new Date()).toISOString(),
+		duration: {
+			total: 23857
+		},
+		status: 'passed',
+		count: {
+			passed: 2,
+			failed: 0,
+			skipped: 1,
+			flaky: 1
+		}
+	},
+	details: [{
+		name: 'test suite > flaky test',
+		location: { file: 'test/test-suite.js' },
+		started: (new Date()).toISOString(),
+		duration: { final: 237, total: 549 },
+		status: 'passed',
+		retries: 1,
+		github: { codeowners: ['@owner-1', '@owner-2'] }
+	}, {
+		name: 'test suite > passing test',
+		location: { file: 'test/test-suite.js' },
+		started: (new Date()).toISOString(),
+		duration: { final: 237, total: 237 },
+		status: 'passed',
+		retries: 0,
+		github: { codeowners: ['@owner-1'] }
+	}, {
+		name: 'test suite > skipped test',
+		location: { file: 'test/test-suite.js' },
+		started: (new Date()).toISOString(),
+		duration: { final: 0, total: 0 },
+		status: 'skipped',
+		retries: 0
+	}]
+};
+
 describe('report', () => {
 	let sandbox;
 	let logger;
@@ -345,6 +400,62 @@ describe('report', () => {
 
 					throw new Error('failed');
 				});
+			});
+		});
+
+		describe('remove codeowners', () => {
+			it('strips github codeowners', () => {
+				const readStub = sandbox.stub(fs, 'readFileSync');
+				const writeStub = sandbox.stub(fs, 'writeFileSync');
+
+				readStub.onFirstCall().returns(JSON.stringify(testReportV2WithCodeowners));
+				writeStub.callsFake((path, data) => {
+					readStub.returns(data);
+				});
+
+				finalize(logger, testContext, testInputsFull);
+
+				const written = JSON.parse(writeStub.firstCall.args[1]);
+
+				for (const detail of written.details) {
+					expect(detail.github).to.be.undefined;
+				}
+			});
+
+			it('no codeowners', () => {
+				const reportWithoutCodeowners = {
+					...testReportV2WithCodeowners,
+					details: testReportV2WithCodeowners.details.map(({ github, ...rest }) => rest)
+				};
+				const readStub = sandbox.stub(fs, 'readFileSync');
+				const writeStub = sandbox.stub(fs, 'writeFileSync');
+
+				readStub.onFirstCall().returns(JSON.stringify(reportWithoutCodeowners));
+				writeStub.callsFake((path, data) => {
+					readStub.returns(data);
+				});
+
+				finalize(logger, testContext, testInputsFull);
+
+				const written = JSON.parse(writeStub.firstCall.args[1]);
+
+				for (const detail of written.details) {
+					expect(detail.github).to.be.undefined;
+				}
+			});
+
+			it('file not found', () => {
+				sandbox.stub(fs, 'readFileSync').throws(new Error('ENOENT'));
+
+				expect(() => finalize(logger, testContext, testInputsFull)).to.throw('Unable to read/parse report');
+			});
+
+			it('invalid json', () => {
+				const readStub = sandbox.stub(fs, 'readFileSync');
+
+				readStub.returns('not json');
+
+				expect(() => finalize(logger, testContext, testInputsFull)).to.throw('Unable to read/parse report');
 			});
 		});
 	});

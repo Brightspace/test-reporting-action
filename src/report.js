@@ -1,5 +1,6 @@
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { MeasureValueType, TimestreamWriteClient, TimeUnit, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
+import fs from 'fs';
 import { Report } from 'd2l-test-reporting/helpers/report.js';
 
 const region = 'us-east-1';
@@ -205,6 +206,44 @@ const writeTimestream = async(region, credentials, requests) => {
 	}
 };
 
+const removeCodeowners = (reportPath) => {
+	let contents;
+
+	try {
+		contents = fs.readFileSync(reportPath, 'utf8');
+	} catch {
+		return;
+	}
+
+	let report;
+
+	try {
+		report = JSON.parse(contents);
+	} catch {
+		return;
+	}
+
+	if (Array.isArray(report.details)) {
+		for (const detail of report.details) {
+			if (typeof detail !== 'object' || detail === null) {
+				continue;
+			}
+
+			delete detail.codeowners;
+
+			if (typeof detail.github === 'object' && detail.github !== null) {
+				delete detail.github.codeowners;
+
+				if (Object.keys(detail.github).length === 0) {
+					delete detail.github;
+				}
+			}
+		}
+	}
+
+	fs.writeFileSync(reportPath, JSON.stringify(report));
+};
+
 const finalize = (logger, context, inputs) => {
 	logger.startGroup('Finalize test report');
 
@@ -239,6 +278,8 @@ const finalize = (logger, context, inputs) => {
 	} else {
 		logger.info('Not injecting GitHub context');
 	}
+
+	removeCodeowners(reportPath);
 
 	const report = new Report(reportPath, reportOptions);
 
