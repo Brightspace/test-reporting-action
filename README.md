@@ -1,5 +1,7 @@
 # Test Reporting (GitHub Action)
 
+[![License][License Badge]][License File]
+
 A GitHub Action for uploading D2L format test reports to back-end visualization
 and querying infrastructure. This action is meant to be used in conjunction with
 reporters from [node reporters].
@@ -8,7 +10,7 @@ reporters from [node reporters].
 > If you have any questions, concerns or just want to chat feel free to reach
 > out in [#test-reporting] (D2L employee accessible only).
 
-## Set-Up
+## Setup
 
 In order for your repository to be able to submit a test report you must first
 enable the `test_reporting` option for your repository in [repo-settings] (D2L
@@ -164,3 +166,5 @@ npm run test:unit
 [#test-reporting]: https://d2l.slack.com/archives/C05MMC7H7EK
 [`dependabot`]: https://docs.github.com/en/code-security/getting-started/dependabot-quickstart-guide
 [D2L test report format]: https://github.com/Brightspace/test-reporting-node/blob/main/docs/report-format.md
+[License Badge]: https://img.shields.io/github/license/Brightspace/test-reporting-action?label=License
+[License File]: ./LICENSE
