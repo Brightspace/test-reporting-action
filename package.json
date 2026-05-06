@@ -38,7 +38,7 @@
     "globals": "^17",
     "mocha": "^11",
     "rimraf": "^6",
-    "sinon": "^21"
+    "sinon": "^22"
   },
   "engines": {
     "node": ">=24"
