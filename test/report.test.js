@@ -535,6 +535,11 @@ describe('report', () => {
 					} catch ({ message }) {
 						expect(message).to.contain('Unable to assume required role');
 						expect(message).to.not.contain('Possibly missing repo-settings set-up');
+
+						const headline = logger.error.firstCall.args[0];
+
+						expect(headline).to.contain('HTTP [unknown]');
+						expect(headline).to.contain('request [unknown]');
 						expect(stsClientMock.calls().length).to.eq(1);
 						expect(timestreamWriteClientMock.calls().length).to.eq(0);
 
@@ -561,14 +566,16 @@ describe('report', () => {
 						expect(message).to.contain('Unable to assume required role');
 						expect(logger.error.calledOnce).to.be.true;
 
-						const details = logger.error.firstCall.args[0];
+						const headline = logger.error.firstCall.args[0];
 
-						expect(details).to.contain('AWS Error Details:');
-						expect(details).to.contain('Name:       AccessDenied');
-						expect(details).to.contain('Message:    User: is not authorized to perform');
-						expect(details).to.contain('Request ID: sts-request-id');
-						expect(details).to.contain('HTTP Code:  403');
-						expect(details).to.contain('Possibly missing repo-settings set-up');
+						expect(headline).to.contain('AccessDenied');
+						expect(headline).to.contain('HTTP 403');
+						expect(headline).to.contain('sts-request-id');
+						expect(headline).to.contain('User: is not authorized to perform');
+
+						const hintCalls = logger.info.getCalls().map(call => call.args[0]);
+
+						expect(hintCalls.some(line => line.includes('Possibly missing repo-settings set-up'))).to.be.true;
 						expect(stsClientMock.calls().length).to.eq(1);
 						expect(timestreamWriteClientMock.calls().length).to.eq(0);
 
@@ -593,6 +600,11 @@ describe('report', () => {
 						await submit(logger, testContext, testInputsNoLmsInfo, report);
 					} catch ({ message }) {
 						expect(message).to.contain('Unable to submit write requests');
+
+						const headline = logger.error.firstCall.args[0];
+
+						expect(headline).to.contain('HTTP [unknown]');
+						expect(headline).to.contain('request [unknown]');
 						expect(stsClientMock.calls().length).to.eq(1);
 						expect(timestreamWriteClientMock.calls().length).to.eq(1);
 
@@ -624,17 +636,16 @@ describe('report', () => {
 						await submit(logger, testContext, testInputsNoLmsInfo, report);
 					} catch ({ message }) {
 						expect(message).to.contain('Unable to submit write requests');
-						expect(logger.error.calledOnce).to.be.true;
 
-						const details = logger.error.firstCall.args[0];
+						const errorCalls = logger.error.getCalls().map(call => call.args[0]);
+						const headline = errorCalls[0];
 
-						expect(details).to.contain('AWS Error Details:');
-						expect(details).to.contain('Name:       RejectedRecordsException');
-						expect(details).to.contain('HTTP Code:  419');
-						expect(details).to.contain('Request ID: write-request-id');
-						expect(details).to.contain('Rejected Records (2):');
-						expect(details).to.contain('Multi value records have multiple values');
-						expect(details).to.contain('Records was older than the data retention period');
+						expect(headline).to.contain('RejectedRecordsException');
+						expect(headline).to.contain('batch 1/');
+						expect(headline).to.contain('HTTP 419');
+						expect(headline).to.contain('write-request-id');
+						expect(errorCalls.some(line => line.includes('Rejected record 0') && line.includes('Multi value records have multiple values'))).to.be.true;
+						expect(errorCalls.some(line => line.includes('Rejected record 2') && line.includes('Records was older than the data retention period'))).to.be.true;
 
 						return;
 					}

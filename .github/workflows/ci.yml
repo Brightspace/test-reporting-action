@@ -125,6 +125,14 @@ jobs:
         run: npm ci
       - name: Run tests
         run: npm run test:unit
+      - name: Upload report (dry run)
+        uses: ./
+        if: github.actor != 'dependabot[bot]'
+        with:
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+          dry-run: true
       - name: Upload report (debug, dry run)
         uses: ./
         if: github.actor != 'dependabot[bot]'
