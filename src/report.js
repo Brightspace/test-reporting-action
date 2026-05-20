@@ -5,6 +5,7 @@ import { Report } from 'd2l-test-reporting/helpers/report.js';
 
 const region = 'us-east-1';
 const databaseName = 'test_reporting';
+const repoSettingsDocUrl = 'https://github.com/Brightspace/repo-settings/blob/main/docs/test-reporting.md#analytics';
 const { BIGINT, VARCHAR, MULTI } = MeasureValueType;
 const { MILLISECONDS } = TimeUnit;
 
@@ -206,6 +207,30 @@ const writeTimestream = async(region, credentials, requests) => {
 	}
 };
 
+const formatAwsError = ({ name, message, $metadata, RejectedRecords }) => {
+	const lines = [
+		'AWS Error Details:',
+		`  Name:       ${name}`,
+		`  Message:    ${message}`
+	];
+
+	if ($metadata) {
+		lines.push(`  Request ID: ${$metadata.requestId}`);
+		lines.push(`  HTTP Code:  ${$metadata.httpStatusCode}`);
+	}
+
+	if (Array.isArray(RejectedRecords) && RejectedRecords.length > 0) {
+		lines.push(`  Rejected Records (${RejectedRecords.length}):`);
+		lines.push(JSON.stringify(RejectedRecords, null, 2));
+	}
+
+	if (name === 'AccessDenied') {
+		lines.push(`  Hint: Possibly missing repo-settings set-up. See ${repoSettingsDocUrl} for details`);
+	}
+
+	return lines.join('\n');
+};
+
 const removeCodeowners = (reportPath) => {
 	let contents;
 
@@ -358,12 +383,10 @@ const submit = async(logger, context, inputs, report) => {
 				{ Key: 'Repo', Value: repository }
 			]
 		);
-	} catch ({ message }) {
-		if (message.includes('is not authorized to perform')) {
-			throw new Error('Unable to assume required role. Possibly missing repo-settings set-up. Please see https://github.com/Brightspace/repo-settings/blob/main/docs/test-reporting.md#analytics for details');
-		}
+	} catch (err) {
+		logger.error(formatAwsError(err));
 
-		throw new Error(`Unable to assume required role: ${message}`);
+		throw new Error('Unable to assume required role');
 	}
 
 	const { dryRun } = inputs;
@@ -378,8 +401,10 @@ const submit = async(logger, context, inputs, report) => {
 
 	try {
 		await writeTimestream(region, credentials, writeRequests);
-	} catch ({ message }) {
-		throw new Error(`Unable to submit write requests: ${message}`);
+	} catch (err) {
+		logger.error(formatAwsError(err));
+
+		throw new Error('Unable to submit write requests');
 	}
 
 	logger.endGroup();

@@ -545,7 +545,12 @@ describe('report', () => {
 				});
 
 				it('permission error', async() => {
-					stsClientMock.on(AssumeRoleCommand).rejects(new Error('User: is not authorized to perform'));
+					const accessDeniedError = Object.assign(new Error('User: is not authorized to perform'), {
+						name: 'AccessDenied',
+						$metadata: { httpStatusCode: 403, requestId: 'sts-request-id' }
+					});
+
+					stsClientMock.on(AssumeRoleCommand).rejects(accessDeniedError);
 					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
 					const report = new Report('dummy-report-path');
@@ -554,7 +559,16 @@ describe('report', () => {
 						await submit(logger, testContext, testInputsNoLmsInfo, report);
 					} catch ({ message }) {
 						expect(message).to.contain('Unable to assume required role');
-						expect(message).to.contain('Possibly missing repo-settings set-up');
+						expect(logger.error.calledOnce).to.be.true;
+
+						const details = logger.error.firstCall.args[0];
+
+						expect(details).to.contain('AWS Error Details:');
+						expect(details).to.contain('Name:       AccessDenied');
+						expect(details).to.contain('Message:    User: is not authorized to perform');
+						expect(details).to.contain('Request ID: sts-request-id');
+						expect(details).to.contain('HTTP Code:  403');
+						expect(details).to.contain('Possibly missing repo-settings set-up');
 						expect(stsClientMock.calls().length).to.eq(1);
 						expect(timestreamWriteClientMock.calls().length).to.eq(0);
 
@@ -565,26 +579,68 @@ describe('report', () => {
 				});
 			});
 
-			it('sending write requests', async() => {
-				stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
-				timestreamWriteClientMock
-					.on(WriteRecordsCommand)
-					.rejects(new Error('failed'));
-				sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
+			describe('sending write requests', () => {
+				it('generic error', async() => {
+					stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+					timestreamWriteClientMock
+						.on(WriteRecordsCommand)
+						.rejects(new Error('failed'));
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
 
-				const report = new Report('dummy-report-path');
+					const report = new Report('dummy-report-path');
 
-				try {
-					await submit(logger, testContext, testInputsNoLmsInfo, report);
-				} catch ({ message }) {
-					expect(message).to.contain('Unable to submit write requests');
-					expect(stsClientMock.calls().length).to.eq(1);
-					expect(timestreamWriteClientMock.calls().length).to.eq(1);
+					try {
+						await submit(logger, testContext, testInputsNoLmsInfo, report);
+					} catch ({ message }) {
+						expect(message).to.contain('Unable to submit write requests');
+						expect(stsClientMock.calls().length).to.eq(1);
+						expect(timestreamWriteClientMock.calls().length).to.eq(1);
 
-					return;
-				}
+						return;
+					}
 
-				throw new Error('failed');
+					throw new Error('failed');
+				});
+
+				it('rejected records', async() => {
+					const rejectedRecordsError = Object.assign(new Error('One or more records have been rejected'), {
+						name: 'RejectedRecordsException',
+						$metadata: { httpStatusCode: 419, requestId: 'write-request-id' },
+						RejectedRecords: [
+							{ RecordIndex: 0, Reason: 'Multi value records have multiple values', ExistingVersion: 1 },
+							{ RecordIndex: 2, Reason: 'Records was older than the data retention period' }
+						]
+					});
+
+					stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+					timestreamWriteClientMock
+						.on(WriteRecordsCommand)
+						.rejects(rejectedRecordsError);
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
+
+					const report = new Report('dummy-report-path');
+
+					try {
+						await submit(logger, testContext, testInputsNoLmsInfo, report);
+					} catch ({ message }) {
+						expect(message).to.contain('Unable to submit write requests');
+						expect(logger.error.calledOnce).to.be.true;
+
+						const details = logger.error.firstCall.args[0];
+
+						expect(details).to.contain('AWS Error Details:');
+						expect(details).to.contain('Name:       RejectedRecordsException');
+						expect(details).to.contain('HTTP Code:  419');
+						expect(details).to.contain('Request ID: write-request-id');
+						expect(details).to.contain('Rejected Records (2):');
+						expect(details).to.contain('Multi value records have multiple values');
+						expect(details).to.contain('Records was older than the data retention period');
+
+						return;
+					}
+
+					throw new Error('failed');
+				});
 			});
 		});
 	});
