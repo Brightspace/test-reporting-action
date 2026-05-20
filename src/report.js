@@ -179,7 +179,7 @@ const makeDetailWriteRequests = (report) => {
 	return writeRequests;
 };
 
-const assumeRole = async(region, credentials, arn, sessionName, duration, tags) => {
+const assumeRole = async(logger, region, credentials, arn, sessionName, duration, tags) => {
 	const client = new STSClient({ region, credentials });
 	const command = new AssumeRoleCommand({
 		RoleArn: arn,
@@ -187,8 +187,25 @@ const assumeRole = async(region, credentials, arn, sessionName, duration, tags) 
 		DurationSeconds: duration,
 		Tags: tags
 	});
-	const { Credentials } = await client.send(command);
-	const { AccessKeyId, SecretAccessKey, SessionToken } = Credentials;
+
+	let response;
+
+	try {
+		response = await client.send(command);
+	} catch (err) {
+		const { name, message, $metadata = {} } = err;
+		const { httpStatusCode = '[unknown]', requestId = '[unknown]' } = $metadata;
+
+		logger.error(`AWS ${name} (HTTP ${httpStatusCode}, request ${requestId}): ${message}`);
+
+		if (name === 'AccessDenied') {
+			logger.info(`Hint: Possibly missing repo-settings set-up. See ${repoSettingsDocUrl} for details`);
+		}
+
+		throw new Error('Unable to assume required role');
+	}
+
+	const { AccessKeyId, SecretAccessKey, SessionToken } = response.Credentials;
 
 	return {
 		accessKeyId: AccessKeyId,
@@ -197,38 +214,38 @@ const assumeRole = async(region, credentials, arn, sessionName, duration, tags) 
 	};
 };
 
-const writeTimestream = async(region, credentials, requests) => {
+const writeTimestream = async(logger, context, region, credentials, requests) => {
+	const { debug } = context;
 	const client = new TimestreamWriteClient({ credentials, region });
 
-	for (const request of requests) {
-		const command = new WriteRecordsCommand(request);
+	for (const [index, request] of requests.entries()) {
+		try {
+			logger.info(`Sending batch ${index + 1} of ${requests.length} (${request.Records.length} records)`);
 
-		await client.send(command);
+			if (debug) {
+				logger.info(`${JSON.stringify(request, null, 2)}\n`);
+			}
+
+			const command = new WriteRecordsCommand(request);
+
+			await client.send(command);
+		} catch (err) {
+			const { name, message, $metadata = {}, RejectedRecords } = err;
+			const { httpStatusCode = '[unknown]', requestId = '[unknown]' } = $metadata;
+
+			logger.error(`AWS ${name} on batch ${index + 1}/${requests.length} (HTTP ${httpStatusCode}, request ${requestId}): ${message}`);
+
+			if (Array.isArray(RejectedRecords)) {
+				for (const rejected of RejectedRecords) {
+					const record = JSON.stringify(request.Records[rejected.RecordIndex]);
+
+					logger.error(`Rejected record ${rejected.RecordIndex} (${rejected.Reason}): ${record}`);
+				}
+			}
+
+			throw new Error('Unable to submit write requests');
+		}
 	}
-};
-
-const formatAwsError = ({ name, message, $metadata, RejectedRecords }) => {
-	const lines = [
-		'AWS Error Details:',
-		`  Name:       ${name}`,
-		`  Message:    ${message}`
-	];
-
-	if ($metadata) {
-		lines.push(`  Request ID: ${$metadata.requestId}`);
-		lines.push(`  HTTP Code:  ${$metadata.httpStatusCode}`);
-	}
-
-	if (Array.isArray(RejectedRecords) && RejectedRecords.length > 0) {
-		lines.push(`  Rejected Records (${RejectedRecords.length}):`);
-		lines.push(JSON.stringify(RejectedRecords, null, 2));
-	}
-
-	if (name === 'AccessDenied') {
-		lines.push(`  Hint: Possibly missing repo-settings set-up. See ${repoSettingsDocUrl} for details`);
-	}
-
-	return lines.join('\n');
 };
 
 const removeCodeowners = (reportPath) => {
@@ -335,22 +352,11 @@ const submit = async(logger, context, inputs, report) => {
 
 	report = report.toJSON();
 
-	const { debug } = inputs;
 	const summaryWriteRequest = makeSummaryWriteRequest(report);
-
-	if (debug) {
-		logger.info('Generated summary write request\n');
-		logger.info(`${JSON.stringify(summaryWriteRequest, null, 2)}\n`);
-	}
 
 	logger.info('Generate detail write requests');
 
 	const detailWriteRequests = makeDetailWriteRequests(report);
-
-	if (debug) {
-		logger.info('Generated detail write requests\n');
-		logger.info(`${JSON.stringify(detailWriteRequests, null, 2)}\n`);
-	}
 
 	logger.info('Merge write requests');
 
@@ -361,33 +367,25 @@ const submit = async(logger, context, inputs, report) => {
 
 	logger.info('Assume required role');
 
-	let credentials;
-
-	try {
-		const { github: { organization, repository } } = context;
-		const {
-			awsAccessKeyId: accessKeyId,
-			awsSecretAccessKey: secretAccessKey,
-			awsSessionToken: sessionToken,
-			roleToAssume: roleArn
-		} = inputs;
-
-		credentials = await assumeRole(
-			region,
-			{ accessKeyId, secretAccessKey, sessionToken },
-			roleArn,
-			`test-reporting-${(new Date()).getTime()}`,
-			3600, // 1 hour
-			[
-				{ Key: 'Org', Value: organization },
-				{ Key: 'Repo', Value: repository }
-			]
-		);
-	} catch (err) {
-		logger.error(formatAwsError(err));
-
-		throw new Error('Unable to assume required role');
-	}
+	const { github: { organization, repository } } = context;
+	const {
+		awsAccessKeyId: accessKeyId,
+		awsSecretAccessKey: secretAccessKey,
+		awsSessionToken: sessionToken,
+		roleToAssume: roleArn
+	} = inputs;
+	const credentials = await assumeRole(
+		logger,
+		region,
+		{ accessKeyId, secretAccessKey, sessionToken },
+		roleArn,
+		`test-reporting-${(new Date()).getTime()}`,
+		3600, // 1 hour
+		[
+			{ Key: 'Org', Value: organization },
+			{ Key: 'Repo', Value: repository }
+		]
+	);
 
 	const { dryRun } = inputs;
 
@@ -399,13 +397,7 @@ const submit = async(logger, context, inputs, report) => {
 
 	logger.info('Executing write requests');
 
-	try {
-		await writeTimestream(region, credentials, writeRequests);
-	} catch (err) {
-		logger.error(formatAwsError(err));
-
-		throw new Error('Unable to submit write requests');
-	}
+	await writeTimestream(logger, inputs, region, credentials, writeRequests);
 
 	logger.endGroup();
 };
