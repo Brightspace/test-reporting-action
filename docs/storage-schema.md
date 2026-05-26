@@ -5,8 +5,12 @@ The data is split across 2 tables ([`summary`](#summary) and
 [`details`](#details)) to better store common items, reduce duplication and
 allow for more targeted queries. Below is a breakdown of the various tables and
 their columns as well as the corresponding JSON path within the report format
-the data is sourced from. The current `measure_name` for both tables is
-`report_v2`. Old format records will be marked with `report_2_bc` or
+the data is sourced from. The current `measure_name` for both the
+[`summary`](#summary) and [`details`](#details) tables is `report_v3_bc` — the
+`_bc` suffix indicates the `details` records still carry deprecated dimensions
+(`experience`, `type`, `tool`, `timeout`) for backwards compatibility. Once
+those dimensions are removed the suffix will be dropped to `report_v3` on both
+tables. Old format records will be marked with `report_v2`, `report_v2_bc` or
 `*_test_run` and can require special handling. See notes under various
 **Removed** sections for details.
 
@@ -90,6 +94,8 @@ combination of the data.
 * `retries` (`BIGINT`): Sourced from report JSON `report.details[].retries`.
 * `status` (`VARCHAR`): Will be one of `passed`, `skipped` or `failed`, sourced
   from report JSON `report.details[].status`.
+* `config_timeout` (`BIGINT`, `NULLABLE`): Stored as **milliseconds**, sourced
+  from report JSON `report.details[].config.timeout`.
 
 > [!WARNING]
   Anything marked with **[deprecated]** should be moved away from. Sending of
@@ -121,12 +127,22 @@ combination of the data.
 * `browser` (`NULLABLE`): Can be one of `chrome`, `chromium`, `firefox`,
   `webkit`, `safari` or `edge`, sourced from report JSON
   `report.details[].browser`.
-* `type` (`NULLABLE`): Sourced from report JSON `report.details[].type`.
-* `experience` (`NULLABLE`): Sourced from report JSON
-  `report.details[].experience`.
-* `tool` (`NULLABLE`): Sourced from report JSON `report.details[].tool`.
-* `timeout` (`NULLABLE`): Stored as **milliseconds**, sourced from report JSON
-  `report.details[].timeout`.
+* `type` (`NULLABLE`) **[deprecated]**: Replaced by `taxonomy_type`. Sourced
+  from report JSON `report.details[].taxonomy.type`.
+* `taxonomy_type` (`NULLABLE`): Sourced from report JSON
+  `report.details[].taxonomy.type`.
+* `experience` (`NULLABLE`) **[deprecated]**: No longer part of the report
+  schema starting with v3. For v1/v2 reports this is sourced from the original
+  JSON at `report.details[].experience` before upgrade and injected onto the
+  outgoing record. Records without this dimension will appear once the source
+  reports are exclusively v3 or newer.
+* `tool` (`NULLABLE`) **[deprecated]**: Replaced by `taxonomy_tool`. Sourced
+  from report JSON `report.details[].taxonomy.tool`.
+* `taxonomy_tool` (`NULLABLE`): Sourced from report JSON
+  `report.details[].taxonomy.tool`.
+* `timeout` (`NULLABLE`) **[deprecated]**: Replaced by the `config_timeout`
+  measure. Stored as **milliseconds**, sourced from report JSON
+  `report.details[].config.timeout`.
 
 > [!WARNING]
   Anything marked with **[deprecated]** should be moved away from. Sending of
@@ -134,9 +150,9 @@ combination of the data.
 
 ##### Removed
 
-* `location`: Starting with records that have `measure_name` of
-  `report_v2` this field will no longer be present. Please use `location_file`
-  instead. If wanting to get data from records prior to `report_v2` please use
+* `location`: Starting with records that have `measure_name` of `report_v2` this
+  field will no longer be present. Please use `location_file` instead. If
+  wanting to get data from records prior to `report_v2` please use
   `COALESCE(location, location_file)` to get a reasonable value.
 
 <!-- links -->
