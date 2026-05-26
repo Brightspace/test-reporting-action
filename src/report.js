@@ -1,5 +1,6 @@
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { MeasureValueType, TimestreamWriteClient, TimeUnit, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
+import fs from 'node:fs';
 import { Report } from 'd2l-test-reporting/helpers/report.js';
 
 const region = 'us-east-1';
@@ -7,6 +8,64 @@ const databaseName = 'test_reporting';
 const repoSettingsDocUrl = 'https://github.com/Brightspace/repo-settings/blob/main/docs/test-reporting.md#analytics';
 const { BIGINT, VARCHAR, MULTI } = MeasureValueType;
 const { MILLISECONDS } = TimeUnit;
+
+// --------------------------------------------------------------------------
+// `experience` was dropped from the v3 report schema but consumers still rely
+// on the `experience` Timestream dimension. We snapshot it from the raw report
+// JSON before the upgrade and inject it onto the outgoing detail records.
+// Delete this block (and its two call sites in `finalize`/`submit`) once the
+// dimension is no longer needed.
+const experienceMaps = new WeakMap();
+
+const captureExperience = (report, reportPath) => {
+	const raw = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+	const version = raw.version ?? raw.reportVersion;
+
+	if (version !== 1 && version !== 2) {
+		return;
+	}
+
+	const map = new Map();
+
+	for (const detail of raw.details) {
+		const { name, location, experience } = detail;
+
+		if (!experience) {
+			continue;
+		}
+
+		const locationFile = typeof location === 'string' ? location : location.file;
+
+		map.set(`${name}|${locationFile}`, experience);
+	}
+
+	if (map.size > 0) {
+		experienceMaps.set(report, map);
+	}
+};
+
+const applyExperienceDimensions = (report, detailWriteRequests) => {
+	const map = experienceMaps.get(report);
+
+	if (!map) {
+		return;
+	}
+
+	experienceMaps.delete(report);
+
+	for (const request of detailWriteRequests) {
+		for (const record of request.Records) {
+			const name = record.Dimensions.find(d => d.Name === 'name')?.Value;
+			const locationFile = record.Dimensions.find(d => d.Name === 'location_file')?.Value;
+			const experience = map.get(`${name}|${locationFile}`);
+
+			if (experience) {
+				record.Dimensions.push({ Name: 'experience', Value: experience });
+			}
+		}
+	}
+};
+// --------------------------------------------------------------------------
 
 const makeSummaryWriteRequest = (report) => {
 	const { id, version, summary } = report;
@@ -70,7 +129,10 @@ const makeSummaryWriteRequest = (report) => {
 			Version: 1,
 			Time: (Date.parse(started)).toString(),
 			TimeUnit: MILLISECONDS,
-			MeasureName: `report_v${version}`,
+			// `_bc` suffix matches the `details` table and signals that the
+			// records are emitted alongside deprecated detail dimensions. Drop the
+			// suffix once the deprecated dimensions are removed.
+			MeasureName: `report_v${version}_bc`,
 			MeasureValueType: MULTI,
 			MeasureValues: [
 				{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
@@ -91,25 +153,36 @@ const makeDetailRecord = (detail) => {
 		started,
 		location,
 		retries,
-		timeout,
+		config,
+		github,
 		duration: {
 			total,
 			final
 		},
 		status,
 		browser,
-		type,
-		experience,
-		tool
+		taxonomy
 	} = detail;
 	const { file, line, column } = location;
+	const { timeout } = config ?? {};
+	const { codeowners } = github ?? {};
+	const { type, tool } = taxonomy ?? {};
+	const measures = [
+		{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
+		{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
+		{ Name: 'retries', Value: retries.toString(), Type: BIGINT },
+		{ Name: 'status', Value: status, Type: VARCHAR }
+	];
 	const dimensions = [
 		{ Name: 'name', Value: name },
 		{ Name: 'location_file', Value: file }
 	];
 
 	if (timeout) {
+		// kept for backwards compat. Once all dashboards are updated will be removed
 		dimensions.push({ Name: 'timeout', Value: timeout.toString() });
+		/////////////////////////////////////////////////////////////////////////////
+		measures.push({ Name: 'config_timeout', Value: timeout.toString(), Type: BIGINT });
 	}
 
 	if (line) {
@@ -125,26 +198,27 @@ const makeDetailRecord = (detail) => {
 	}
 
 	if (type) {
+		// kept for backwards compat. Once all dashboards are updated will be removed
 		dimensions.push({ Name: 'type', Value: type });
-	}
-
-	if (experience) {
-		dimensions.push({ Name: 'experience', Value: experience });
+		/////////////////////////////////////////////////////////////////////////////
+		dimensions.push({ Name: 'taxonomy_type', Value: type });
 	}
 
 	if (tool) {
+		// kept for backwards compat. Once all dashboards are updated will be removed
 		dimensions.push({ Name: 'tool', Value: tool });
+		/////////////////////////////////////////////////////////////////////////////
+		dimensions.push({ Name: 'taxonomy_tool', Value: tool });
+	}
+
+	if (codeowners) {
+		dimensions.push({ Name: 'github_codeowners', Value: codeowners.join(',') });
 	}
 
 	return {
 		Time: (Date.parse(started)).toString(),
 		TimeUnit: MILLISECONDS,
-		MeasureValues: [
-			{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
-			{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
-			{ Name: 'retries', Value: retries.toString(), Type: BIGINT },
-			{ Name: 'status', Value: status, Type: VARCHAR }
-		],
+		MeasureValues: measures,
 		Dimensions: dimensions
 	};
 };
@@ -165,7 +239,10 @@ const makeDetailWriteRequests = (report) => {
 				Records: detailRecordBatch,
 				CommonAttributes: {
 					Version: 1,
-					MeasureName: `report_v${version}`,
+					// `_bc` suffix signals that records still carry deprecated
+					// dimensions (`experience`, `type`, `tool`) for backwards
+					// compatibility. Drop the suffix once those are removed.
+					MeasureName: `report_v${version}_bc`,
 					MeasureValueType: MULTI,
 					Dimensions: [
 						{ Name: 'report_id', Value: id, Type: VARCHAR }
@@ -261,7 +338,7 @@ const finalize = (logger, context, inputs) => {
 		lmsInfo.instanceUrl = lmsInstanceUrl;
 	}
 
-	let reportOptions = { lmsInfo };
+	let reportOptions = { lmsInfo, upgradeToLatest: true };
 
 	if (injectGitHubContext === 'force') {
 		logger.info('Forcefully inject GitHub context');
@@ -283,6 +360,19 @@ const finalize = (logger, context, inputs) => {
 	}
 
 	const report = new Report(reportPath, reportOptions);
+
+	captureExperience(report, reportPath);
+
+	if (experienceMaps.has(report)) {
+		logger.info('Captured experience dimension from source report for backwards compatibility');
+
+		if (debug) {
+			const map = experienceMaps.get(report);
+
+			logger.info(`Experience map (${map.size} entries)\n`);
+			logger.info(`${JSON.stringify(Object.fromEntries(map), null, 2)}\n`);
+		}
+	}
 
 	if (debug) {
 		logger.info('Loaded report\n');
@@ -309,13 +399,18 @@ const submit = async(logger, context, inputs, report) => {
 	logger.startGroup('Submit report');
 	logger.info('Generate summary write request');
 
-	report = report.toJSON();
-
-	const summaryWriteRequest = makeSummaryWriteRequest(report);
+	const reportJson = report.toJSON();
+	const summaryWriteRequest = makeSummaryWriteRequest(reportJson);
 
 	logger.info('Generate detail write requests');
 
-	const detailWriteRequests = makeDetailWriteRequests(report);
+	const detailWriteRequests = makeDetailWriteRequests(reportJson);
+
+	if (experienceMaps.has(report)) {
+		logger.info('Restoring experience dimension onto detail records');
+	}
+
+	applyExperienceDimensions(report, detailWriteRequests);
 
 	logger.info('Merge write requests');
 
