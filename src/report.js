@@ -91,18 +91,26 @@ const makeDetailRecord = (detail) => {
 		started,
 		location,
 		retries,
-		timeout,
+		config,
+		github,
 		duration: {
 			total,
 			final
 		},
 		status,
 		browser,
-		type,
-		experience,
-		tool
+		taxonomy
 	} = detail;
 	const { file, line, column } = location;
+	const { timeout } = config ?? {};
+	const { codeowners } = github ?? {};
+	const { type, tool } = taxonomy ?? {};
+	const measures = [
+		{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
+		{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
+		{ Name: 'retries', Value: retries.toString(), Type: BIGINT },
+		{ Name: 'status', Value: status, Type: VARCHAR }
+	];
 	const dimensions = [
 		{ Name: 'name', Value: name },
 		{ Name: 'location_file', Value: file }
@@ -110,6 +118,7 @@ const makeDetailRecord = (detail) => {
 
 	if (timeout) {
 		dimensions.push({ Name: 'timeout', Value: timeout.toString() });
+		measures.push({ Name: 'config_timeout', Value: timeout, Type: BIGINT });
 	}
 
 	if (line) {
@@ -126,25 +135,22 @@ const makeDetailRecord = (detail) => {
 
 	if (type) {
 		dimensions.push({ Name: 'type', Value: type });
-	}
-
-	if (experience) {
-		dimensions.push({ Name: 'experience', Value: experience });
+		dimensions.push({ Name: 'taxonomy_type', Value: type });
 	}
 
 	if (tool) {
 		dimensions.push({ Name: 'tool', Value: tool });
+		dimensions.push({ Name: 'taxonomy_tool', Value: tool });
+	}
+
+	if (codeowners) {
+		dimensions.push({ Name: 'github_codeowners', Value: codeowners.join(',') });
 	}
 
 	return {
 		Time: (Date.parse(started)).toString(),
 		TimeUnit: MILLISECONDS,
-		MeasureValues: [
-			{ Name: 'duration_final', Value: final.toString(), Type: BIGINT },
-			{ Name: 'duration_total', Value: total.toString(), Type: BIGINT },
-			{ Name: 'retries', Value: retries.toString(), Type: BIGINT },
-			{ Name: 'status', Value: status, Type: VARCHAR }
-		],
+		MeasureValues: measures,
 		Dimensions: dimensions
 	};
 };
@@ -165,7 +171,7 @@ const makeDetailWriteRequests = (report) => {
 				Records: detailRecordBatch,
 				CommonAttributes: {
 					Version: 1,
-					MeasureName: `report_v${version}`,
+					MeasureName: `report_v${version}_bc`,
 					MeasureValueType: MULTI,
 					Dimensions: [
 						{ Name: 'report_id', Value: id, Type: VARCHAR }
@@ -261,7 +267,7 @@ const finalize = (logger, context, inputs) => {
 		lmsInfo.instanceUrl = lmsInstanceUrl;
 	}
 
-	let reportOptions = { lmsInfo };
+	let reportOptions = { lmsInfo, upgradeToLatest: true };
 
 	if (injectGitHubContext === 'force') {
 		logger.info('Forcefully inject GitHub context');
