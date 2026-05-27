@@ -226,31 +226,33 @@ const makeDetailRecord = (detail) => {
 const makeDetailWriteRequests = (report) => {
 	const { id, version, details } = report;
 	const batchSize = 100;
-	const writeRequests = Array.from(
-		{ length: Math.ceil(details.length / batchSize) },
-		(v, i) => {
-			const detailRecordBatch = details
-				.slice(i * batchSize, i * batchSize + batchSize)
-				.map(makeDetailRecord);
+	const writeRequests = [];
+	const commonAttributes = {
+		Version: 1,
+		// `_bc` suffix signals that records still carry deprecated
+		// dimensions (`experience`, `type`, `tool`) for backwards
+		// compatibility. Drop the suffix once those are removed.
+		MeasureName: `report_v${version}_bc`,
+		MeasureValueType: MULTI,
+		Dimensions: [
+			{ Name: 'report_id', Value: id, Type: VARCHAR }
+		]
+	};
 
-			return {
+	for (let i = 0; i < details.length; i++) {
+		if (i % batchSize === 0) {
+			writeRequests.push({
 				DatabaseName: databaseName,
 				TableName: 'details',
-				Records: detailRecordBatch,
-				CommonAttributes: {
-					Version: 1,
-					// `_bc` suffix signals that records still carry deprecated
-					// dimensions (`experience`, `type`, `tool`) for backwards
-					// compatibility. Drop the suffix once those are removed.
-					MeasureName: `report_v${version}_bc`,
-					MeasureValueType: MULTI,
-					Dimensions: [
-						{ Name: 'report_id', Value: id, Type: VARCHAR }
-					]
-				}
-			};
+				Records: [],
+				CommonAttributes: commonAttributes
+			});
 		}
-	);
+
+		writeRequests[writeRequests.length - 1].Records.push(
+			makeDetailRecord(details[i])
+		);
+	}
 
 	return writeRequests;
 };
