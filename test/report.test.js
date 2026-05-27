@@ -135,12 +135,198 @@ const testReportV1Full = {
 		experience: 'Experience'
 	}))
 };
-
+const testReportV2Minimal = {
+	id: '00000000-0000-0000-0000-000000000000',
+	version: 2,
+	summary: {
+		operatingSystem: 'linux',
+		framework: 'mocha',
+		started: (new Date()).toISOString(),
+		duration: {
+			total: 23857
+		},
+		status: 'passed',
+		count: {
+			passed: 2,
+			failed: 0,
+			skipped: 1,
+			flaky: 1
+		}
+	},
+	details: [{
+		name: 'test suite > flaky test',
+		location: { file: 'test/test-suite.js', line: 10, column: 4 },
+		started: (new Date()).toISOString(),
+		duration: { final: 237, total: 549 },
+		status: 'passed',
+		retries: 1,
+		timeout: 5000
+	}, {
+		name: 'test suite > passing test',
+		location: { file: 'test/test-suite.js', line: 20, column: 4 },
+		started: (new Date()).toISOString(),
+		duration: { final: 237, total: 237 },
+		status: 'passed',
+		retries: 0,
+		timeout: 5000
+	}, {
+		name: 'test suite > skipped test',
+		location: { file: 'test/test-suite.js', line: 30, column: 4 },
+		started: (new Date()).toISOString(),
+		duration: { final: 0, total: 0 },
+		status: 'skipped',
+		retries: 0,
+		timeout: 5000
+	}]
+};
+const testReportV2NoLmsInfo = {
+	id: testReportV2Minimal.id,
+	version: testReportV2Minimal.version,
+	summary: {
+		...testReportV2Minimal.summary,
+		github: {
+			organization: testContext.github.organization,
+			repository: testContext.github.repository,
+			workflow: testContext.github.workflow,
+			runId: testContext.github.runId,
+			runAttempt: testContext.github.runAttempt
+		},
+		git: {
+			branch: testContext.git.branch,
+			sha: testContext.git.sha
+		}
+	},
+	details: testReportV2Minimal.details.map(detail => ({
+		...detail,
+		browser: 'chromium',
+		type: 'unit',
+		tool: 'Tool',
+		experience: 'Experience'
+	}))
+};
+const testReportV2Full = {
+	...testReportV2NoLmsInfo,
+	summary: {
+		...testReportV2NoLmsInfo.summary,
+		lms: {
+			buildNumber: lmsInfo.lmsBuildNumber,
+			instanceUrl: lmsInfo.lmsInstanceUrl
+		}
+	},
+	details: testReportV2NoLmsInfo.details.map(detail => ({
+		...detail,
+		browser: 'chromium',
+		type: 'unit',
+		tool: 'Tool',
+		experience: 'Experience'
+	}))
+};
 const testAwsStsCredentials = {
 	Credentials: {
 		AccessKeyId: 'test-access-key-id',
 		SecretAccessKey: 'test-secret-access-key',
 		SessionToken: 'test-session-token'
+	}
+};
+const upgradeTestCases = [{
+	sourceVersion: 1,
+	expectedReportId: testReportV1Minimal.reportId,
+	testReportMinimal: testReportV1Minimal,
+	testReportNoLmsInfo: testReportV1NoLmsInfo,
+	testReportFull: testReportV1Full
+}, {
+	sourceVersion: 2,
+	expectedReportId: testReportV2Minimal.id,
+	testReportMinimal: testReportV2Minimal,
+	testReportNoLmsInfo: testReportV2NoLmsInfo,
+	testReportFull: testReportV2Full
+}];
+
+const expectFinalizedReport = (report, options) => {
+	const { id, version, summary, details } = report.toJSON();
+	const {
+		sourceReport,
+		reportId, context,
+		hasBrowser,
+		hasExtendedLocation,
+		hasTaxonomy
+	} = options;
+	const { github, git, lms, duration, count } = summary;
+	const { github: expectedGithub, git: expectedGit } = context;
+	const sourceDetails = sourceReport.details;
+
+	expect(id).to.eq(reportId);
+	expect(version).to.eq(2);
+	expect(github.organization).to.eq(expectedGithub.organization);
+	expect(github.repository).to.eq(expectedGithub.repository);
+	expect(github.workflow).to.eq(expectedGithub.workflow);
+	expect(github.runId).to.eq(expectedGithub.runId);
+	expect(github.runAttempt).to.eq(expectedGithub.runAttempt);
+	expect(git.branch).to.eq(expectedGit.branch);
+	expect(git.sha).to.eq(expectedGit.sha);
+	expect(lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
+	expect(lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
+	expect(summary.operatingSystem).to.eq('linux');
+	expect(summary.framework).to.eq('mocha');
+	expect(summary.started).to.eq(sourceReport.summary.started);
+	expect(duration.total).to.eq(23857);
+	expect(summary.status).to.eq('passed');
+	expect(count.passed).to.eq(2);
+	expect(count.failed).to.eq(0);
+	expect(count.skipped).to.eq(1);
+	expect(count.flaky).to.eq(1);
+	expect(details).to.have.lengthOf(3);
+	expect(details[0].name).to.eq('test suite > flaky test');
+	expect(details[0].status).to.eq('passed');
+	expect(details[0].retries).to.eq(1);
+	expect(details[0].duration.final).to.eq(237);
+	expect(details[0].duration.total).to.eq(549);
+	expect(details[0].started).to.eq(sourceReport.details[0].started);
+	expect(details[1].name).to.eq('test suite > passing test');
+	expect(details[1].status).to.eq('passed');
+	expect(details[1].retries).to.eq(0);
+	expect(details[1].duration.final).to.eq(237);
+	expect(details[1].duration.total).to.eq(237);
+	expect(details[1].started).to.eq(sourceReport.details[1].started);
+	expect(details[2].name).to.eq('test suite > skipped test');
+	expect(details[2].status).to.eq('skipped');
+	expect(details[2].retries).to.eq(0);
+	expect(details[2].duration.final).to.eq(0);
+	expect(details[2].duration.total).to.eq(0);
+	expect(details[2].started).to.eq(sourceReport.details[2].started);
+
+	for (const [index, detail] of details.entries()) {
+		const sourceDetail = sourceDetails[index];
+		const { location } = detail;
+
+		expect(location.file).to.eq('test/test-suite.js');
+
+		if (hasExtendedLocation) {
+			const expectedLocation = sourceDetail.location;
+			const { line, column } = expectedLocation;
+
+			expect(location.line).to.eq(line);
+			expect(location.column).to.eq(column);
+		} else {
+			expect(location.line).to.be.undefined;
+			expect(location.column).to.be.undefined;
+		}
+
+		if (hasBrowser) {
+			expect(detail.browser).to.eq('chromium');
+		} else {
+			expect(detail.browser).to.be.undefined;
+		}
+
+		if (hasTaxonomy) {
+			expect(detail.tool).to.eq('Tool');
+			expect(detail.type).to.eq('unit');
+			expect(detail.experience).to.eq('Experience');
+		} else {
+			expect(detail.tool).to.be.undefined;
+			expect(detail.type).to.be.undefined;
+			expect(detail.experience).to.be.undefined;
+		}
 	}
 };
 
@@ -163,100 +349,100 @@ describe('report', () => {
 	afterEach(() => sandbox.restore());
 
 	describe('finalize', () => {
-		it('minimal', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1Minimal));
+		for (const testCase of upgradeTestCases) {
+			const {
+				sourceVersion,
+				expectedReportId,
+				testReportMinimal,
+				testReportNoLmsInfo,
+				testReportFull
+			} = testCase;
 
-			const report = await finalize(logger, testContext, testInputsFull);
-			const { id, version, summary } = report.toJSON();
+			describe(`v${sourceVersion} source`, () => {
+				const hasExtendedLocation = sourceVersion === 2;
 
-			expect(id).to.eq(testReportV1Minimal.reportId);
-			expect(version).to.eq(2);
-			expect(summary.github.organization).to.eq(testContext.github.organization);
-			expect(summary.github.repository).to.eq(testContext.github.repository);
-			expect(summary.github.workflow).to.eq(testContext.github.workflow);
-			expect(summary.github.runId).to.eq(testContext.github.runId);
-			expect(summary.github.runAttempt).to.eq(testContext.github.runAttempt);
-			expect(summary.git.branch).to.eq(testContext.git.branch);
-			expect(summary.git.sha).to.eq(testContext.git.sha);
-			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
-		});
+				it('minimal', async() => {
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportMinimal));
 
-		it('no lms info', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
+					const report = await finalize(logger, testContext, testInputsFull);
+					const options = {
+						sourceReport: testReportMinimal,
+						reportId: expectedReportId,
+						context: testContext,
+						hasBrowser: false,
+						hasExtendedLocation,
+						hasTaxonomy: false
+					};
 
-			const report = await finalize(logger, testContext, testInputsFull);
-			const { id, version, summary } = report.toJSON();
+					expectFinalizedReport(report, options);
+				});
 
-			expect(id).to.eq(testReportV1NoLmsInfo.reportId);
-			expect(version).to.eq(2);
-			expect(summary.github.organization).to.eq(testContext.github.organization);
-			expect(summary.github.repository).to.eq(testContext.github.repository);
-			expect(summary.github.workflow).to.eq(testContext.github.workflow);
-			expect(summary.github.runId).to.eq(testContext.github.runId);
-			expect(summary.github.runAttempt).to.eq(testContext.github.runAttempt);
-			expect(summary.git.branch).to.eq(testContext.git.branch);
-			expect(summary.git.sha).to.eq(testContext.git.sha);
-			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
-		});
+				it('no lms info', async() => {
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
-		it('full', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1Full));
+					const report = await finalize(logger, testContext, testInputsFull);
+					const options = {
+						sourceReport: testReportNoLmsInfo,
+						reportId: expectedReportId,
+						context: testContext,
+						hasBrowser: true,
+						hasExtendedLocation,
+						hasTaxonomy: true
+					};
 
-			const report = await finalize(logger, testContext, testInputsNoLmsInfo);
-			const { id, version, summary } = report.toJSON();
+					expectFinalizedReport(report, options);
+				});
 
-			expect(id).to.eq(testReportV1Full.reportId);
-			expect(version).to.eq(2);
-			expect(summary.github.organization).to.eq(testContext.github.organization);
-			expect(summary.github.repository).to.eq(testContext.github.repository);
-			expect(summary.github.workflow).to.eq(testContext.github.workflow);
-			expect(summary.github.runId).to.eq(testContext.github.runId);
-			expect(summary.github.runAttempt).to.eq(testContext.github.runAttempt);
-			expect(summary.git.branch).to.eq(testContext.git.branch);
-			expect(summary.git.sha).to.eq(testContext.git.sha);
-			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
-		});
+				it('full', async() => {
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportFull));
 
-		it('force inject context', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
+					const report = await finalize(logger, testContext, testInputsNoLmsInfo);
+					const options = {
+						sourceReport: testReportFull,
+						reportId: expectedReportId,
+						context: testContext,
+						hasBrowser: true,
+						hasExtendedLocation,
+						hasTaxonomy: true
+					};
 
-			const report = await finalize(logger, testOtherContext, testInputsForceInject);
-			const { id, version, summary } = report.toJSON();
+					expectFinalizedReport(report, options);
+				});
 
-			expect(id).to.eq(testReportV1NoLmsInfo.reportId);
-			expect(version).to.eq(2);
-			expect(summary.github.organization).to.eq(testOtherContext.github.organization);
-			expect(summary.github.repository).to.eq(testOtherContext.github.repository);
-			expect(summary.github.workflow).to.eq(testOtherContext.github.workflow);
-			expect(summary.github.runId).to.eq(testOtherContext.github.runId);
-			expect(summary.github.runAttempt).to.eq(testOtherContext.github.runAttempt);
-			expect(summary.git.branch).to.eq(testOtherContext.git.branch);
-			expect(summary.git.sha).to.eq(testOtherContext.git.sha);
-			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
-		});
+				it('force inject context', async() => {
+					const options = {
+						sourceReport: testReportNoLmsInfo,
+						reportId: expectedReportId,
+						context: testOtherContext,
+						hasBrowser: true,
+						hasExtendedLocation,
+						hasTaxonomy: true
+					};
 
-		it('disable inject context', async() => {
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
-			const report = await finalize(logger, testOtherContext, testInputsDisableInject);
-			const { id, version, summary } = report.toJSON();
+					const report = await finalize(logger, testOtherContext, testInputsForceInject);
 
-			expect(id).to.eq(testReportV1NoLmsInfo.reportId);
-			expect(version).to.eq(2);
-			expect(summary.github.organization).to.eq(testContext.github.organization);
-			expect(summary.github.repository).to.eq(testContext.github.repository);
-			expect(summary.github.workflow).to.eq(testContext.github.workflow);
-			expect(summary.github.runId).to.eq(testContext.github.runId);
-			expect(summary.github.runAttempt).to.eq(testContext.github.runAttempt);
-			expect(summary.git.branch).to.eq(testContext.git.branch);
-			expect(summary.git.sha).to.eq(testContext.git.sha);
-			expect(summary.lms.buildNumber).to.eq(lmsInfo.lmsBuildNumber);
-			expect(summary.lms.instanceUrl).to.eq(lmsInfo.lmsInstanceUrl);
-		});
+					expectFinalizedReport(report, options);
+				});
+
+				it('disable inject context', async() => {
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
+
+					const report = await finalize(logger, testOtherContext, testInputsDisableInject);
+					const options = {
+						sourceReport: testReportNoLmsInfo,
+						reportId: expectedReportId,
+						context: testContext,
+						hasBrowser: true,
+						hasExtendedLocation,
+						hasTaxonomy: true
+					};
+
+					expectFinalizedReport(report, options);
+				});
+			});
+		}
 
 		describe('fails', () => {
 			it('file read', async() => {
@@ -363,53 +549,63 @@ describe('report', () => {
 			timestreamWriteClientMock.reset();
 		});
 
-		it('full', async() => {
-			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
-			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1Full));
+		for (const testCase of upgradeTestCases) {
+			const {
+				sourceVersion,
+				testReportNoLmsInfo,
+				testReportFull
+			} = testCase;
 
-			const report = new Report('dummy-report-path');
+			describe(`v${sourceVersion} source`, () => {
+				it('full', async() => {
+					stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+					timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportFull));
 
-			await submit(logger, testContext, testInputsFull, report);
+					const report = new Report('dummy-report-path');
 
-			expect(stsClientMock.calls().length).to.eq(1);
-			expect(timestreamWriteClientMock.calls().length).to.eq(2);
-		});
+					await submit(logger, testContext, testInputsFull, report);
 
-		it('dry run', async() => {
-			const dryRunInputs = {
-				...testInputsFull,
-				dryRun: true
-			};
+					expect(stsClientMock.calls().length).to.eq(1);
+					expect(timestreamWriteClientMock.calls().length).to.eq(2);
+				});
 
-			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1Full));
+				it('dry run', async() => {
+					const dryRunInputs = {
+						...testInputsFull,
+						dryRun: true
+					};
 
-			const report = new Report('dummy-report-path');
+					stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportFull));
 
-			await submit(logger, testContext, dryRunInputs, report);
+					const report = new Report('dummy-report-path');
 
-			expect(stsClientMock.calls().length).to.eq(1);
-			expect(timestreamWriteClientMock.calls().length).to.eq(0);
-		});
+					await submit(logger, testContext, dryRunInputs, report);
 
-		it('debug', async() => {
-			const debugInputs = {
-				...testInputsFull,
-				debug: true
-			};
+					expect(stsClientMock.calls().length).to.eq(1);
+					expect(timestreamWriteClientMock.calls().length).to.eq(0);
+				});
 
-			stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
-			timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
-			sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportV1NoLmsInfo));
+				it('debug', async() => {
+					const debugInputs = {
+						...testInputsFull,
+						debug: true
+					};
 
-			const report = new Report('dummy-report-path');
+					stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+					timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
 
-			await submit(logger, testContext, debugInputs, report);
+					const report = new Report('dummy-report-path');
 
-			expect(stsClientMock.calls().length).to.eq(1);
-			expect(timestreamWriteClientMock.calls().length).to.eq(2);
-		});
+					await submit(logger, testContext, debugInputs, report);
+
+					expect(stsClientMock.calls().length).to.eq(1);
+					expect(timestreamWriteClientMock.calls().length).to.eq(2);
+				});
+			});
+		}
 
 		describe('fails', () => {
 			describe('invalid credentials', () => {
