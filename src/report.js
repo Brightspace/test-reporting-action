@@ -399,12 +399,14 @@ const submit = async(logger, context, inputs, report) => {
 	logger.startGroup('Submit report');
 	logger.info('Generate summary write request');
 
-	const reportJson = report.toJSON();
+	let reportJson = report.toJSON();
 	const summaryWriteRequest = makeSummaryWriteRequest(reportJson);
 
 	logger.info('Generate detail write requests');
 
 	const detailWriteRequests = makeDetailWriteRequests(reportJson);
+
+	reportJson = null;
 
 	if (experienceMaps.has(report)) {
 		logger.info('Restoring experience dimension onto detail records');
