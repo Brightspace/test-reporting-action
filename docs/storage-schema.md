@@ -94,8 +94,8 @@ combination of the data.
 * `retries` (`BIGINT`): Sourced from report JSON `report.details[].retries`.
 * `status` (`VARCHAR`): Will be one of `passed`, `skipped` or `failed`, sourced
   from report JSON `report.details[].status`.
-* `config_timeout` (`BIGINT`, `NULLABLE`): Stored as **milliseconds**, sourced
-  from report JSON `report.details[].config.timeout`.
+* `configuration_timeout` (`BIGINT`, `NULLABLE`): Stored as **milliseconds**, sourced
+  from report JSON `report.details[].configuration.timeout`.
 
 > [!WARNING]
   Anything marked with **[deprecated]** should be moved away from. Sending of
@@ -140,9 +140,9 @@ combination of the data.
   from report JSON `report.details[].taxonomy.tool`.
 * `taxonomy_tool` (`NULLABLE`): Sourced from report JSON
   `report.details[].taxonomy.tool`.
-* `timeout` (`NULLABLE`) **[deprecated]**: Replaced by the `config_timeout`
+* `timeout` (`NULLABLE`) **[deprecated]**: Replaced by the `configuration_timeout`
   measure. Stored as **milliseconds**, sourced from report JSON
-  `report.details[].config.timeout`.
+  `report.details[].configuration.timeout`.
 
 > [!WARNING]
   Anything marked with **[deprecated]** should be moved away from. Sending of

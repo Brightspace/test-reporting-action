@@ -154,6 +154,7 @@ const makeDetailRecord = (detail) => {
 		location,
 		retries,
 		config,
+		configuration,
 		github,
 		duration: {
 			total,
@@ -164,7 +165,7 @@ const makeDetailRecord = (detail) => {
 		taxonomy
 	} = detail;
 	const { file, line, column } = location;
-	const { timeout } = config ?? {};
+	const { timeout } = configuration ?? config ?? {};
 	const { codeowners } = github ?? {};
 	const { type, tool } = taxonomy ?? {};
 	const measures = [
@@ -182,7 +183,7 @@ const makeDetailRecord = (detail) => {
 		// kept for backwards compat. Once all dashboards are updated will be removed
 		dimensions.push({ Name: 'timeout', Value: timeout.toString() });
 		/////////////////////////////////////////////////////////////////////////////
-		measures.push({ Name: 'config_timeout', Value: timeout.toString(), Type: BIGINT });
+		measures.push({ Name: 'configuration_timeout', Value: timeout.toString(), Type: BIGINT });
 	}
 
 	if (line) {
