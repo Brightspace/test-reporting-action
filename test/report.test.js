@@ -430,13 +430,10 @@ const expectFinalizedReport = (report, options) => {
 	const {
 		sourceReport,
 		sourceVersion,
-		reportId, context,
-		hasBrowser,
-		hasTaxonomy
+		reportId, context
 	} = options;
 	const { github, git, lms, duration, count } = summary;
 	const { github: expectedGithub, git: expectedGit } = context;
-	const sourceDetails = sourceReport.details;
 	const extendedLocationAvailable = sourceVersion >= 2;
 	const codeownersAvailable = sourceVersion >= 3;
 	const timeoutAvailable = sourceVersion >= 2;
@@ -461,28 +458,10 @@ const expectFinalizedReport = (report, options) => {
 	expect(count.failed).to.eq(0);
 	expect(count.skipped).to.eq(1);
 	expect(count.flaky).to.eq(1);
-	expect(details).to.have.lengthOf(3);
-	expect(details[0].name).to.eq('test suite > flaky test');
-	expect(details[0].status).to.eq('passed');
-	expect(details[0].retries).to.eq(1);
-	expect(details[0].duration.final).to.eq(237);
-	expect(details[0].duration.total).to.eq(549);
-	expect(details[0].started).to.eq(sourceReport.details[0].started);
-	expect(details[1].name).to.eq('test suite > passing test');
-	expect(details[1].status).to.eq('passed');
-	expect(details[1].retries).to.eq(0);
-	expect(details[1].duration.final).to.eq(237);
-	expect(details[1].duration.total).to.eq(237);
-	expect(details[1].started).to.eq(sourceReport.details[1].started);
-	expect(details[2].name).to.eq('test suite > skipped test');
-	expect(details[2].status).to.eq('skipped');
-	expect(details[2].retries).to.eq(0);
-	expect(details[2].duration.final).to.eq(0);
-	expect(details[2].duration.total).to.eq(0);
-	expect(details[2].started).to.eq(sourceReport.details[2].started);
+	expect(details).to.have.lengthOf(sourceReport.details.length);
 
 	for (const [index, detail] of details.entries()) {
-		const sourceDetail = sourceDetails[index];
+		const sourceDetail = sourceReport.details[index];
 		const { location } = detail;
 		const hasExtendedLocation = extendedLocationAvailable &&
 			typeof sourceDetail.location === 'object';
@@ -490,6 +469,22 @@ const expectFinalizedReport = (report, options) => {
 			sourceDetail.github?.codeowners != null;
 		const hasTimeout = timeoutAvailable &&
 			(sourceDetail.config?.timeout != null || sourceDetail.timeout != null);
+		const hasBrowser = sourceDetail.browser != null;
+		const hasTaxonomy = sourceDetail.taxonomy != null ||
+			sourceDetail.tool != null ||
+			sourceDetail.type != null;
+
+		expect(detail.name).to.eq(sourceDetail.name);
+		expect(detail.status).to.eq(sourceDetail.status);
+		expect(detail.retries).to.eq(sourceDetail.retries);
+		expect(detail.started).to.eq(sourceDetail.started);
+
+		const expectedDuration = typeof sourceDetail.duration === 'object' ?
+			sourceDetail.duration :
+			{ final: sourceDetail.duration, total: sourceDetail.totalDuration };
+
+		expect(detail.duration.final).to.eq(expectedDuration.final);
+		expect(detail.duration.total).to.eq(expectedDuration.total);
 
 		expect(location.file).to.eq('test/test-suite.js');
 
@@ -574,9 +569,7 @@ describe('report', () => {
 						sourceReport: testReportMinimal,
 						sourceVersion,
 						reportId: expectedReportId,
-						context: testContext,
-						hasBrowser: false,
-						hasTaxonomy: false
+						context: testContext
 					};
 
 					expectFinalizedReport(report, options);
@@ -590,9 +583,7 @@ describe('report', () => {
 						sourceReport: testReportNoLmsInfo,
 						sourceVersion,
 						reportId: expectedReportId,
-						context: testContext,
-						hasBrowser: true,
-						hasTaxonomy: true
+						context: testContext
 					};
 
 					expectFinalizedReport(report, options);
@@ -606,9 +597,7 @@ describe('report', () => {
 						sourceReport: testReportFull,
 						sourceVersion,
 						reportId: expectedReportId,
-						context: testContext,
-						hasBrowser: true,
-						hasTaxonomy: true
+						context: testContext
 					};
 
 					expectFinalizedReport(report, options);
@@ -619,9 +608,7 @@ describe('report', () => {
 						sourceReport: testReportNoLmsInfo,
 						sourceVersion,
 						reportId: expectedReportId,
-						context: testOtherContext,
-						hasBrowser: true,
-						hasTaxonomy: true
+						context: testOtherContext
 					};
 
 					sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLmsInfo));
@@ -639,9 +626,7 @@ describe('report', () => {
 						sourceReport: testReportNoLmsInfo,
 						sourceVersion,
 						reportId: expectedReportId,
-						context: testContext,
-						hasBrowser: true,
-						hasTaxonomy: true
+						context: testContext
 					};
 
 					expectFinalizedReport(report, options);
