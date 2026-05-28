@@ -1,4 +1,7 @@
 {
   "spec": "test/**/*.test.js",
-  "reporter": "d2l-test-reporting/reporters/mocha.js"
+  "reporter": "d2l-test-reporting/reporters/mocha.js",
+  "reporterOptions": [
+    "reportVersionLatest=true"
+  ]
 }
