@@ -523,9 +523,9 @@ const expectFinalizedReport = (report, options) => {
 		}
 
 		if (hasTimeout) {
-			expect(detail.config.timeout).to.eq(sourceDetail.config?.timeout ?? sourceDetail.timeout);
+			expect(detail.configuration.timeout).to.eq(sourceDetail.config?.timeout ?? sourceDetail.timeout);
 		} else {
-			expect(detail.config).to.be.undefined;
+			expect(detail.configuration).to.be.undefined;
 		}
 
 		expect(detail.timeout).to.be.undefined;
