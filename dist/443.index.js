@@ -83,7 +83,7 @@ const commonParams = {
     UseDualStack: { type: "builtInParams", name: "useDualstackEndpoint" },
 };
 
-var version = "3.997.17";
+var version = "3.997.18";
 var packageInfo = {
 	version: version};
 
