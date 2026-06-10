@@ -30,7 +30,10 @@ const resolveSSOCredentials = async ({ ssoStartUrl, ssoSession, ssoAccountId, ss
                 filepath,
                 configFilepath,
                 ignoreCache,
-            })();
+                clientConfig,
+                parentClientConfig,
+                logger,
+            })({ callerClientConfig });
             token = {
                 accessToken: _token.token,
                 expiresAt: new Date(_token.expiration).toISOString(),
@@ -296,7 +299,7 @@ const commonParams = {
     UseDualStack: { type: "builtInParams", name: "useDualstackEndpoint" },
 };
 
-var version = "3.997.17";
+var version = "3.997.18";
 var packageInfo = {
 	version: version};
 
