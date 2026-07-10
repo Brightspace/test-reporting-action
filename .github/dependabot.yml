@@ -16,7 +16,7 @@ updates:
       - dependency-name: eslint
         versions: '>= 10'
     groups:
-      aws-clients:
+      aws-sdk:
         dependency-type: production
         patterns:
           - '@aws-sdk/*'
