@@ -56,10 +56,12 @@ GitHub Action submit test reporting data to the framework.
   assume.
 * `report-path` (default: `./d2l-test-report.json`): Path to the D2L format test
   report JSON file for processing.
-* `lms-build-number`: The LMS build number of the site used to generate this
-  report. Will throw an error if provided and already present in the report.
-* `lms-instance-url`: The LMS instance URL of the site used to generate this
-  report. Will throw an error if provided and already present in the report.
+* `lms-build-number` (optional): The LMS build number of the site used to
+  generate this report. Will throw an error if provided and already present in
+  the report.
+* `lms-instance-url` (optional): The LMS instance URL of the site used to
+  generate this report. Will throw an error if provided and already present in
+  the report.
 * `inject-github-context` (default: `auto`): Change mode for injection of GitHub
   Actions context at report submission time.
   * `auto`: Injects GitHub Actions context into report if missing
@@ -74,6 +76,12 @@ GitHub Action submit test reporting data to the framework.
 * `debug` (default: `false`): Enable or disable debug mode. Will enable
   additional log messages. Does not stop final submission of report data to
   backend. Only really useful for debugging and testing.
+
+### Outputs
+
+This action does not define GitHub Actions outputs. When `post-summary` is
+enabled and `dry-run` is `false`, it writes links to the submitted report data
+to the GitHub Actions job summary instead.
 
 ## Authentication
 

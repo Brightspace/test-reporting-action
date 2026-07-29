@@ -16,29 +16,22 @@ inputs:
     default: arn:aws:iam::427469055187:role/github+${{github.repository_owner == 'BrightspaceHypermediaComponents' && 'BHC' || github.repository_owner}}+${{github.event.repository.name}}
   report-path:
     description: Path to the D2L format test report JSON file for processing
-    required: true
     default: ./d2l-test-report.json
   lms-build-number:
     description: LMS build number used in the generation of this report
-    required: false
   lms-instance-url:
     description: LMS instance URL used in the generation of this report
-    required: false
   inject-github-context:
     description: Change mode for injection of GitHub Actions context at report submission time
-    required: true
     default: auto
   post-summary:
     description: Post information about data submitted to GitHub summary
-    required: false
     default: true
   dry-run:
     description: Run action in dry run mode. Will perform all operations except final submission of report data to backend
-    required: true
     default: false
   debug:
     description: Enable or disable debug mode. Will enable additional log messages. Does not stop final submission of report data to backend
-    required: true
     default: false
 runs:
   using: node24
