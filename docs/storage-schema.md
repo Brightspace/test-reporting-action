@@ -25,6 +25,11 @@ tables. Old format records will be marked with `report_v2`, `report_v2_bc` or
 This table contains all of the information that is common to a test run as well
 as some rolled up counts of various test statuses.
 
+#### Timestamp
+
+* `time` (`TIMESTAMP`): Stored with **millisecond** precision, sourced from
+  report JSON `report.summary.started`.
+
 #### Measures
 
 * `duration_total` (`BIGINT`): Stored as **milliseconds** from report JSON
@@ -85,6 +90,11 @@ This table contains information about each individual test that was run. You can
 map to the [`summary`](#summary) data via the `report_id` if you need a
 combination of the data.
 
+#### Timestamp
+
+* `time` (`TIMESTAMP`): Stored with **millisecond** precision, sourced from
+  report JSON `report.details[].started`.
+
 #### Measures
 
 * `duration_final` (`BIGINT`): Stored as **milliseconds**, sourced from report
@@ -127,6 +137,8 @@ combination of the data.
 * `browser` (`NULLABLE`): Can be one of `chrome`, `chromium`, `firefox`,
   `webkit`, `safari` or `edge`, sourced from report JSON
   `report.details[].browser`.
+* `github_codeowners` (`NULLABLE`): A comma-separated list sourced from report
+  JSON `report.details[].github.codeowners`.
 * `type` (`NULLABLE`) **[deprecated]**: Replaced by `taxonomy_type`. Sourced
   from report JSON `report.details[].taxonomy.type`.
 * `taxonomy_type` (`NULLABLE`): Sourced from report JSON
