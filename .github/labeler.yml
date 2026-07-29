@@ -10,6 +10,7 @@ github-actions:
   - changed-files:
     - any-glob-to-any-file:
       - .github/workflows/*.yml
+      - action.yml
 javascript:
   - changed-files:
     - any-glob-to-any-file:
