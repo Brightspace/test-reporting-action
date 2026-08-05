@@ -33,7 +33,7 @@
     "eslint": "^9",
     "eslint-config-brightspace": "^4",
     "eslint-plugin-json": "^5",
-    "eslint-plugin-mocha": "^11",
+    "eslint-plugin-mocha": "^12",
     "eslint-plugin-promise": "^7",
     "mocha": "^11",
     "rimraf": "^6",
