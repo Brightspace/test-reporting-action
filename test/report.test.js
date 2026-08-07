@@ -797,6 +797,26 @@ describe('report', () => {
 			});
 		}
 
+		describe('location omitted from detail', () => {
+			it('does not send location_file dimension', async() => {
+				const testReportNoLocation = {
+					...testReportV3Full,
+					details: [{ ...testReportV3Full.details[0], location: undefined }]
+				};
+
+				stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+				timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+				sandbox.stub(fs, 'readFileSync').returns(JSON.stringify(testReportNoLocation));
+
+				await submit(logger, testContext, testInputsFull, new Report('dummy-report-path'));
+
+				const [{ Dimensions }] = timestreamWriteClientMock.calls()
+					.find(call => call.args[0].input.TableName === 'details').args[0].input.Records;
+
+				expect(Dimensions.some(d => d.Name === 'location_file')).to.be.false;
+			});
+		});
+
 		describe('backwards compatible experience dimension', () => {
 			const getDetailDimensions = () => {
 				const calls = timestreamWriteClientMock.calls();
