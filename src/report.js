@@ -164,7 +164,7 @@ const makeDetailRecord = (detail) => {
 		browser,
 		taxonomy
 	} = detail;
-	const { file, line, column } = location;
+	const { file, line, column } = location ?? {};
 	const { timeout } = configuration ?? config ?? {};
 	const { codeowners } = github ?? {};
 	const { type, tool } = taxonomy ?? {};
@@ -175,9 +175,12 @@ const makeDetailRecord = (detail) => {
 		{ Name: 'status', Value: status, Type: VARCHAR }
 	];
 	const dimensions = [
-		{ Name: 'name', Value: name },
-		{ Name: 'location_file', Value: file }
+		{ Name: 'name', Value: name }
 	];
+
+	if (file) {
+		dimensions.push({ Name: 'location_file', Value: file });
+	}
 
 	if (timeout) {
 		// kept for backwards compat. Once all dashboards are updated will be removed
