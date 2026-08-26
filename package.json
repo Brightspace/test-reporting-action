@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@eslint/compat": "^2",
-    "@vercel/ncc": "^0.44",
+    "@vercel/ncc": "^0.45",
     "aws-sdk-client-mock": "^4",
     "c8": "^12",
     "chai": "^6",
