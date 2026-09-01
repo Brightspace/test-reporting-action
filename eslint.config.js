@@ -1,7 +1,7 @@
 import { dirname, resolve } from 'node:path';
 import { nodeConfig, setDirectoryConfigs } from 'eslint-config-brightspace';
 import { fileURLToPath } from 'node:url';
-import { includeIgnoreFile } from '@eslint/compat';
+import { includeIgnoreFile } from '@eslint/config-helpers';
 import jsonPlugin from 'eslint-plugin-json';
 import mochaPlugin from 'eslint-plugin-mocha';
 import promisePlugin from 'eslint-plugin-promise';
@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const gitignorePath = resolve(__dirname, '.gitignore');
 const ignoreConfigs = [
-	includeIgnoreFile(gitignorePath),
+	includeIgnoreFile(gitignorePath, { gitignoreResolution: true }),
 	{ ignores: ['**/dist/'] }
 ];
 const globalConfigs = [
