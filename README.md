@@ -33,15 +33,22 @@ GitHub Action submit test reporting data to the framework.
     aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
 ```
 
+`if: (!cancelled())` runs the upload step after failed tests, but not after the
+workflow is cancelled. On workflows that run on pull requests, Dependabot may
+not have access to repository secrets. Use this condition instead. See
+[`dependabot`].
+
+```yml
+if: >
+  (!cancelled()) &&
+  github.actor != 'dependabot[bot]'
+```
+
 > [!IMPORTANT]
 > This action assumes a report, conforming to the [D2L test report format], has
 > already been generated using one of the available test framework [node
 > reporters]. This report file, typically generated at `./d2l-test-report.json`,
 > must be available at the time this action is run otherwise it will fail.
-
-> [!NOTE]
-> If using this action in a workflow triggered by a `pull_request` please see
-> information about [`dependabot`](#dependabot) below.
 
 ### Inputs
 
@@ -92,24 +99,6 @@ really no reason to change this but it has been exposed via `role-to-assume` in
 the rare case we need them in the future. As long as you've followed the
 instructions outlined in [repo-settings] (D2L employee accessible only) this
 should work as expected.
-
-## Dependabot
-
-If you are using this action in a context where [`dependabot`] can be a possible
-actor then you must skip this action's step as `secrets` may not be available.
-This looks like the following:
-
-```yml
-- name: Upload test report
-  uses: Brightspace/test-reporting-action@main
-  if: >
-    (!cancelled()) &&
-    github.actor != 'dependabot[bot]'
-  with:
-    aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
-    aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-    aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
-```
 
 ## Storage Schema
 
