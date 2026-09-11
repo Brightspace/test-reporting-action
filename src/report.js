@@ -149,6 +149,7 @@ const makeSummaryWriteRequest = (report) => {
 
 const makeDetailRecord = (detail) => {
 	const {
+		testId,
 		name,
 		started,
 		location,
@@ -177,6 +178,10 @@ const makeDetailRecord = (detail) => {
 	const dimensions = [
 		{ Name: 'name', Value: name }
 	];
+
+	if (testId) {
+		dimensions.push({ Name: 'test_id', Value: testId });
+	}
 
 	if (file) {
 		dimensions.push({ Name: 'location_file', Value: file });
