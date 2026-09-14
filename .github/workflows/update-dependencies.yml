@@ -35,3 +35,24 @@ jobs:
           SLACK_CHANNEL_FAILURE: '#quality-enablement-alerts'
           SLACK_CHANNEL_STALE_PR: '#quality-enablement-alerts'
           SLACK_TOKEN: ${{secrets.D2L_SLACK_TOKEN}}
+      - name: Build
+        run: npm run build
+      - name: Update build files
+        uses: Brightspace/third-party-actions@peter-evans/create-pull-request
+        id: build-changes
+        with:
+          token: ${{secrets.PR_MANAGE_TOKEN}}
+          commit-message: Update Build
+          branch: ghworkflow/package_lock_auto_update
+          title: Update Dependencies
+          body: Automatic update of the `package-lock.json` file.
+          delete-branch: true
+          add-paths: dist/*
+      - name: Approve build changes
+        if: >
+          steps.build-changes.outputs.pull-request-operation == 'created' ||
+          steps.build-changes.outputs.pull-request-operation == 'updated'
+        run: gh pr review --approve "$PULL_REQUEST_URL"
+        env:
+          PULL_REQUEST_URL: ${{steps.build-changes.outputs.pull-request-url}}
+          GITHUB_TOKEN: ${{github.token}}
