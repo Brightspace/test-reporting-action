@@ -9,6 +9,20 @@ const repoSettingsDocUrl = 'https://github.com/Brightspace/repo-settings/blob/ma
 const { BIGINT, VARCHAR, MULTI } = MeasureValueType;
 const { MILLISECONDS } = TimeUnit;
 
+const logReportMetadata = (logger, reportPath) => {
+	try {
+		const contents = fs.readFileSync(reportPath, 'utf8');
+		const report = JSON.parse(contents);
+		const version = report.version ?? report.reportVersion;
+		const detailCount = Array.isArray(report.details) ? report.details.length : 'unknown';
+
+		logger.info(`Source report version: ${version}`);
+		logger.info(`Source report detail count: ${detailCount}`);
+	} catch {
+		// Report loading will emit the actionable error.
+	}
+};
+
 // --------------------------------------------------------------------------
 // `experience` was dropped from the v3 report schema but consumers still rely
 // on the `experience` Timestream dimension. We snapshot it from the raw report
@@ -367,6 +381,8 @@ const finalize = (logger, context, inputs) => {
 	} else {
 		logger.info('Not injecting GitHub context');
 	}
+
+	logReportMetadata(logger, reportPath);
 
 	const report = new Report(reportPath, reportOptions);
 

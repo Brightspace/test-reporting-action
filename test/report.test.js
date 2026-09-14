@@ -573,6 +573,10 @@ describe('report', () => {
 					};
 
 					expectFinalizedReport(report, options);
+					const infoMessages = logger.info.getCalls().map((call) => call.args[0]);
+
+					expect(infoMessages).to.include(`Source report version: ${sourceVersion}`);
+					expect(infoMessages).to.include(`Source report detail count: ${testReportMinimal.details.length}`);
 				});
 
 				it('no lms info', async() => {
