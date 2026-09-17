@@ -38,21 +38,19 @@ jobs:
       - name: Build
         run: npm run build
       - name: Update build files
-        uses: Brightspace/third-party-actions@peter-evans/create-pull-request
         id: build-changes
-        with:
-          token: ${{secrets.PR_MANAGE_TOKEN}}
-          commit-message: Update Build
-          branch: ghworkflow/package_lock_auto_update
-          title: Update Dependencies
-          body: Automatic update of the `package-lock.json` file.
-          delete-branch: true
-          add-paths: dist/*
+        run: |
+          git add dist/*
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Update Build"
+          git push origin HEAD:ghworkflow/package_lock_auto_update
+          echo "updated=true" >> "$GITHUB_OUTPUT"
       - name: Approve build changes
-        if: >
-          steps.build-changes.outputs.pull-request-operation == 'created' ||
-          steps.build-changes.outputs.pull-request-operation == 'updated'
-        run: gh pr review --approve "$PULL_REQUEST_URL"
+        if: steps.build-changes.outputs.updated == 'true'
+        run: gh pr review --approve "$(gh pr view --json url --jq .url)"
         env:
-          PULL_REQUEST_URL: ${{steps.build-changes.outputs.pull-request-url}}
           GITHUB_TOKEN: ${{github.token}}
