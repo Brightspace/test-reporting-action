@@ -817,6 +817,83 @@ describe('report', () => {
 			});
 		});
 
+		describe('test ID detail dimension', () => {
+			const getDetailDimensions = () => {
+				const detailCall = timestreamWriteClientMock.calls()
+					.find(call => call.args[0].input.TableName === 'details');
+
+				return detailCall.args[0].input.Records[0].Dimensions;
+			};
+
+			beforeEach(() => {
+				stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+				timestreamWriteClientMock.on(WriteRecordsCommand).resolves();
+			});
+
+			it('omits test_id when absent', async() => {
+				await submit(logger, testContext, testInputsFull, {
+					toJSON: () => testReportV3Full
+				});
+
+				expect(getDetailDimensions().some(d => d.Name === 'test_id')).to.be.false;
+			});
+
+			it('includes test_id when present', async() => {
+				const v4Report = {
+					...testReportV3Full,
+					version: 4,
+					details: [{
+						...testReportV3Full.details[0],
+						testId: 'nunit:v1:sha256:abc123'
+					}]
+				};
+
+				await submit(logger, testContext, testInputsFull, {
+					toJSON: () => v4Report
+				});
+
+				expect(getDetailDimensions()).to.deep.include({
+					Name: 'test_id',
+					Value: 'nunit:v1:sha256:abc123'
+				});
+			});
+
+			it('truncates name dimension values to the Timestream limit', async() => {
+				const name = 'a'.repeat(1025);
+				const reportWithLongName = {
+					...testReportV3Full,
+					details: [{ ...testReportV3Full.details[0], name }]
+				};
+
+				await submit(logger, testContext, testInputsFull, {
+					toJSON: () => reportWithLongName
+				});
+
+				expect(getDetailDimensions()).to.deep.include({
+					Name: 'name',
+					Value: 'a'.repeat(1024)
+				});
+				expect(logger.info.getCalls().map(call => call.args[0])).to.include(
+					'Truncated test name dimension from 1025 to 1024 characters.'
+				);
+			});
+
+			it('does not log truncated names when debug is disabled', async() => {
+				const reportWithLongName = {
+					...testReportV3Full,
+					details: [{ ...testReportV3Full.details[0], name: 'a'.repeat(1025) }]
+				};
+
+				await submit(logger, testContext, { ...testInputsFull, debug: false }, {
+					toJSON: () => reportWithLongName
+				});
+
+				expect(logger.info.getCalls().map(call => call.args[0])).not.to.include(
+					'Truncated test name dimension from 1025 to 1024 characters.'
+				);
+			});
+		});
+
 		describe('backwards compatible experience dimension', () => {
 			const getDetailDimensions = () => {
 				const calls = timestreamWriteClientMock.calls();
