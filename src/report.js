@@ -1,3 +1,4 @@
+const maxDimensionValueLength = 1024;
 import { AssumeRoleCommand, STSClient } from '@aws-sdk/client-sts';
 import { MeasureValueType, TimestreamWriteClient, TimeUnit, WriteRecordsCommand } from '@aws-sdk/client-timestream-write';
 import fs from 'node:fs';
@@ -149,6 +150,7 @@ const makeSummaryWriteRequest = (report) => {
 
 const makeDetailRecord = (detail) => {
 	const {
+		testId,
 		name,
 		started,
 		location,
@@ -175,8 +177,12 @@ const makeDetailRecord = (detail) => {
 		{ Name: 'status', Value: status, Type: VARCHAR }
 	];
 	const dimensions = [
-		{ Name: 'name', Value: name }
+		{ Name: 'name', Value: name.slice(0, maxDimensionValueLength) }
 	];
+
+	if (testId) {
+		dimensions.push({ Name: 'test_id', Value: testId });
+	}
 
 	if (file) {
 		dimensions.push({ Name: 'location_file', Value: file });
@@ -257,6 +263,20 @@ const makeDetailWriteRequests = (report) => {
 	);
 
 	return writeRequests;
+};
+
+const logTruncatedDetailNames = (logger, report, debug) => {
+	if (!debug) {
+		return;
+	}
+
+	for (const { name } of report.details) {
+		if (name.length > maxDimensionValueLength) {
+			logger.info(
+				`Truncated test name dimension from ${name.length} to ${maxDimensionValueLength} characters.`
+			);
+		}
+	}
 };
 
 const assumeRole = async(logger, region, credentials, arn, sessionName, duration, tags) => {
@@ -407,6 +427,8 @@ const submit = async(logger, context, inputs, report) => {
 	const summaryWriteRequest = makeSummaryWriteRequest(reportJson);
 
 	logger.info('Generate detail write requests');
+
+	logTruncatedDetailNames(logger, reportJson, inputs.debug);
 
 	const detailWriteRequests = makeDetailWriteRequests(reportJson);
 
