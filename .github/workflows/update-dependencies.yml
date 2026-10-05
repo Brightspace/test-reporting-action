@@ -26,7 +26,6 @@ jobs:
       - name: Update package-lock.json
         uses: BrightspaceUI/actions/update-package-lock@main
         with:
-          APPROVAL_TOKEN: ${{github.token}}
           AUTO_MERGE_METHOD: squash
           AUTO_MERGE_TOKEN: ${{secrets.PR_MANAGE_TOKEN}}
           GITHUB_TOKEN: ${{secrets.PR_MANAGE_TOKEN}}
@@ -35,22 +34,45 @@ jobs:
           SLACK_CHANNEL_FAILURE: '#quality-enablement-alerts'
           SLACK_CHANNEL_STALE_PR: '#quality-enablement-alerts'
           SLACK_TOKEN: ${{secrets.D2L_SLACK_TOKEN}}
+      - name: Check for dependency changes
+        id: dependency-changes
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "updated=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build
+        if: steps.dependency-changes.outputs.updated == 'true'
         run: npm run build
       - name: Update build files
         id: build-changes
+        if: steps.dependency-changes.outputs.updated == 'true'
         run: |
-          git add dist/*
-          if git diff --cached --quiet; then
-            exit 0
+          git add dist/
+          if ! git diff --cached --quiet; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git commit -m "Update Build"
+            git push origin HEAD:ghworkflow/package_lock_auto_update
           fi
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git commit -m "Update Build"
-          git push origin HEAD:ghworkflow/package_lock_auto_update
-          echo "updated=true" >> "$GITHUB_OUTPUT"
-      - name: Approve build changes
-        if: steps.build-changes.outputs.updated == 'true'
-        run: gh pr review --approve "$(gh pr view --json url --jq .url)"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Approve dependency changes
+        if: steps.dependency-changes.outputs.updated == 'true'
+        run: |
+          # The PR API can lag behind the push. Never approve a different head.
+          for _ in {1..12}; do
+            NUMBER=$(gh pr view ghworkflow/package_lock_auto_update \
+              --repo "$GITHUB_REPOSITORY" \
+              --json number,headRefOid \
+              --jq "select(.headRefOid == \"$EXPECTED_SHA\") | .number")
+            if [ -n "$NUMBER" ]; then
+              gh api --method POST "repos/$GITHUB_REPOSITORY/pulls/$NUMBER/reviews" \
+                -f commit_id="$EXPECTED_SHA" -f event=APPROVE
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Dependency PR did not reach expected SHA $EXPECTED_SHA"
+          exit 1
         env:
+          EXPECTED_SHA: ${{steps.build-changes.outputs.sha}}
           GITHUB_TOKEN: ${{github.token}}
