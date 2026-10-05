@@ -6,6 +6,7 @@ import { Report } from 'd2l-test-reporting/helpers/report.js';
 
 const region = 'us-east-1';
 const databaseName = 'test_reporting';
+const maxConcurrentDetailWrites = 5;
 const repoSettingsDocUrl = 'https://github.com/Brightspace/repo-settings/blob/main/docs/test-reporting.md#analytics';
 const { BIGINT, VARCHAR, MULTI } = MeasureValueType;
 const { MILLISECONDS } = TimeUnit;
@@ -318,7 +319,9 @@ const writeTimestream = async(logger, context, region, credentials, requests) =>
 	const { debug } = context;
 	const client = new TimestreamWriteClient({ credentials, region });
 
-	for (const [index, request] of requests.entries()) {
+	const writeRequest = async(index) => {
+		const request = requests[index];
+
 		try {
 			logger.info(`Sending batch ${index + 1} of ${requests.length} (${request.Records.length} records)`);
 
@@ -345,6 +348,33 @@ const writeTimestream = async(logger, context, region, credentials, requests) =>
 
 			throw new Error('Unable to submit write requests');
 		}
+	};
+
+	await writeRequest(0);
+
+	let nextIndex = 1;
+	let failed = false;
+	const writeNext = async() => {
+		while (!failed && nextIndex < requests.length) {
+			const index = nextIndex++;
+
+			try {
+				await writeRequest(index);
+			} catch (err) {
+				failed = true;
+
+				throw err;
+			}
+		}
+	};
+	const results = await Promise.allSettled(Array.from(
+		{ length: Math.min(maxConcurrentDetailWrites, requests.length - 1) },
+		writeNext
+	));
+	const failure = results.find(result => result.status === 'rejected');
+
+	if (failure) {
+		throw failure.reason;
 	}
 };
 

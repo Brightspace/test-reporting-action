@@ -90,6 +90,14 @@ This action does not define GitHub Actions outputs. When `post-summary` is
 enabled and `dry-run` is `false`, it writes links to the submitted report data
 to the GitHub Actions job summary instead.
 
+### Upload behavior
+
+The summary is uploaded first, followed by detail batches of up to 100 records
+with at most five requests in flight. AWS SDK retries and backoff remain enabled.
+If an upload fails after retries, no new batches are scheduled; in-flight
+requests finish before the action reports the failure. Already uploaded records
+are not rolled back.
+
 ## Authentication
 
 By default this action assumes you are using the default setup for sending to
