@@ -65,6 +65,9 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      - name: Check build is up to date
+        if: github.event.pull_request.head.ref == 'ghworkflow/package_lock_auto_update'
+        run: git diff --exit-code -- dist/
       - name: Handle changes
         if: github.event.pull_request.head.ref != 'ghworkflow/package_lock_auto_update'
         uses: Brightspace/third-party-actions@peter-evans/create-pull-request
