@@ -6,6 +6,7 @@ import { expect } from 'chai';
 import fs from 'fs';
 import { mockClient } from 'aws-sdk-client-mock';
 import { Report } from 'd2l-test-reporting/helpers/report.js';
+import { setImmediate } from 'node:timers/promises';
 
 const testContext = {
 	github: {
@@ -796,6 +797,169 @@ describe('report', () => {
 				});
 			});
 		}
+
+		describe('concurrent detail uploads', () => {
+			let writes;
+
+			const makeReport = (count) => ({
+				toJSON: () => ({
+					...testReportV3Full,
+					details: Array.from({ length: count }, (_, index) => ({
+						...testReportV3Full.details[0],
+						name: `test ${index}`
+					}))
+				})
+			});
+
+			beforeEach(() => {
+				writes = [];
+				stsClientMock.on(AssumeRoleCommand).resolves(testAwsStsCredentials);
+				timestreamWriteClientMock.on(WriteRecordsCommand).callsFake(request => {
+					const write = { request, ...Promise.withResolvers() };
+
+					writes.push(write);
+
+					return write.promise;
+				});
+			});
+
+			it('waits for the summary before starting detail uploads', async() => {
+				const submission = submit(logger, testContext, testInputsFull, makeReport(201));
+
+				await setImmediate();
+
+				expect(writes).to.have.length(1);
+				expect(writes[0].request.TableName).to.eq('summary');
+
+				writes[0].resolve();
+				await setImmediate();
+
+				expect(writes).to.have.length(4);
+				expect(writes.slice(1).map(write => write.request.Records.length)).to.deep.eq([100, 100, 1]);
+
+				for (const write of writes.slice(1)) {
+					write.resolve();
+				}
+
+				await submission;
+			});
+
+			it('caps concurrency at five and refills slots as uploads finish', async() => {
+				const submission = submit(logger, testContext, testInputsFull, makeReport(1201));
+
+				await setImmediate();
+				writes[0].resolve();
+				await setImmediate();
+
+				expect(writes).to.have.length(6);
+
+				writes[3].resolve();
+				await setImmediate();
+
+				expect(writes).to.have.length(7);
+				expect(writes[6].request.Records[0].Dimensions[0].Value).to.eq('test 500');
+
+				for (let index = 1; index < 14; index++) {
+					writes[index].resolve();
+					await setImmediate();
+				}
+
+				await submission;
+
+				expect(writes).to.have.length(14);
+				const records = writes.slice(1).flatMap(write => write.request.Records);
+
+				expect(records).to.have.length(1201);
+				expect(records.map(record => record.Dimensions[0].Value)).to.deep.eq(
+					Array.from({ length: 1201 }, (_, index) => `test ${index}`)
+				);
+			});
+
+			it('waits for every detail upload before completing', async() => {
+				let completed = false;
+				const submission = (async() => {
+					await submit(logger, testContext, testInputsFull, makeReport(401));
+					completed = true;
+				})();
+
+				await setImmediate();
+				writes[0].resolve();
+				await setImmediate();
+
+				for (const write of writes.slice(2)) {
+					write.resolve();
+				}
+				await setImmediate();
+
+				expect(completed).to.be.false;
+				expect(logger.endGroup.called).to.be.false;
+
+				writes[1].resolve();
+				await submission;
+
+				expect(completed).to.be.true;
+				expect(logger.endGroup.calledOnce).to.be.true;
+			});
+
+			it('uploads only the summary when there are no details', async() => {
+				const submission = submit(logger, testContext, testInputsFull, makeReport(0));
+
+				await setImmediate();
+				writes[0].resolve();
+				await submission;
+
+				expect(writes).to.have.length(1);
+				expect(writes[0].request.TableName).to.eq('summary');
+			});
+
+			it('stops scheduling after a detail failure and drains in-flight uploads', async() => {
+				let completed = false;
+				const submission = (async() => {
+					const results = await Promise.allSettled([
+						submit(logger, testContext, testInputsFull, makeReport(1201))
+					]);
+
+					completed = true;
+
+					return results[0];
+				})();
+
+				await setImmediate();
+				writes[0].resolve();
+				await setImmediate();
+				writes[2].reject(Object.assign(new Error('Write failed'), {
+					name: 'RejectedRecordsException',
+					$metadata: { httpStatusCode: 419, requestId: 'concurrent-write-id' },
+					RejectedRecords: [{ RecordIndex: 0, Reason: 'Invalid record' }]
+				}));
+				await setImmediate();
+
+				expect(completed).to.be.false;
+				expect(writes).to.have.length(6);
+				expect(logger.error.firstCall.args[0]).to.contain('batch 3/14');
+				expect(logger.error.firstCall.args[0]).to.contain('HTTP 419');
+				expect(logger.error.firstCall.args[0]).to.contain('concurrent-write-id');
+				expect(logger.error.secondCall.args[0]).to.contain('Rejected record 0 (Invalid record)');
+				expect(logger.error.secondCall.args[0]).to.contain('test 100');
+
+				writes[1].resolve();
+				writes[3].reject(new Error('Another write failed'));
+				writes[4].resolve();
+				await setImmediate();
+
+				expect(completed).to.be.false;
+				expect(writes).to.have.length(6);
+				expect(logger.error.thirdCall.args[0]).to.contain('batch 4/14');
+
+				writes[5].resolve();
+				const result = await submission;
+
+				expect(result.status).to.eq('rejected');
+				expect(result.reason.message).to.eq('Unable to submit write requests');
+				expect(writes).to.have.length(6);
+				expect(logger.endGroup.called).to.be.false;
+			});
+		});
 
 		describe('location omitted from detail', () => {
 			it('does not send location_file dimension', async() => {
